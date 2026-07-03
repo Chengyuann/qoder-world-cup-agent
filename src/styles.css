@@ -422,7 +422,10 @@ input[type="range"] {
 }
 
 .probability-section,
+.data-section,
 .bracket-section,
+.reasoning-section,
+.scenario-section,
 .groups-section,
 .architecture-section,
 .evidence-section {
@@ -450,6 +453,172 @@ input[type="range"] {
   display: flex;
   flex-direction: column;
   justify-content: space-between;
+}
+
+.data-grid {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr 1fr 1.2fr;
+  gap: 14px;
+}
+
+.data-card,
+.scenario-card,
+.reasoning-panel,
+.route-strip {
+  background: linear-gradient(180deg, rgba(244, 241, 232, 0.08), rgba(244, 241, 232, 0.035));
+  border: 1px solid var(--line);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    0 24px 60px rgba(0, 0, 0, 0.18);
+}
+
+.data-card {
+  min-height: 210px;
+  padding: 24px;
+}
+
+.data-card span,
+.scenario-card span {
+  display: block;
+  color: var(--accent-2);
+  font-size: 0.78rem;
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.data-card strong {
+  display: block;
+  margin-top: 28px;
+  color: var(--text);
+  font-size: 1.45rem;
+  line-height: 1.18;
+}
+
+.data-card p,
+.scenario-card p {
+  margin-top: 14px;
+  color: #bdc2b4;
+  line-height: 1.65;
+}
+
+.feature-flow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 16px;
+  border: 1px solid var(--line);
+  background: rgba(17, 19, 15, 0.62);
+  padding: 16px 18px;
+  color: #e7e1d0;
+  font-size: 0.88rem;
+  font-weight: 900;
+}
+
+.feature-flow span {
+  white-space: nowrap;
+}
+
+.feature-flow svg {
+  color: var(--accent);
+  flex: 0 0 auto;
+}
+
+.reasoning-panel {
+  display: grid;
+  grid-template-columns: minmax(0, 0.95fr) minmax(360px, 1.05fr);
+  gap: 28px;
+  padding: 30px;
+}
+
+.reasoning-panel h2 {
+  margin-top: 12px;
+  font-size: clamp(2.2rem, 4vw, 4.2rem);
+  line-height: 1.02;
+}
+
+.reasoning-panel p {
+  margin-top: 18px;
+  color: #bfc3b5;
+  line-height: 1.75;
+  max-width: 680px;
+}
+
+.reasoning-panel p strong {
+  color: var(--accent-2);
+}
+
+.reasoning-stack {
+  display: grid;
+  gap: 12px;
+}
+
+.reasoning-step {
+  display: grid;
+  grid-template-columns: 42px minmax(0, 1fr);
+  gap: 14px;
+  align-items: start;
+  padding: 16px;
+  border: 1px solid rgba(244, 241, 232, 0.09);
+  background: rgba(244, 241, 232, 0.035);
+}
+
+.reasoning-step span {
+  color: var(--accent-2);
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+}
+
+.reasoning-step p {
+  margin: 0;
+  color: #d6dacd;
+}
+
+.route-strip {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 14px;
+  padding: 14px;
+}
+
+.route-strip span {
+  display: block;
+  min-height: 58px;
+  padding: 12px;
+  border-left: 2px solid rgba(208, 180, 111, 0.54);
+  color: #d8dccf;
+  background: rgba(17, 19, 15, 0.42);
+  font-size: 0.84rem;
+  line-height: 1.45;
+}
+
+.scenario-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.scenario-card {
+  min-height: 240px;
+  padding: 24px;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.scenario-card strong {
+  display: block;
+  margin-top: 22px;
+  color: #e7e1d0;
+  font-size: 0.88rem;
+  line-height: 1.5;
+}
+
+.scenario-card.active {
+  border-color: rgba(208, 180, 111, 0.56);
+  background: linear-gradient(180deg, rgba(208, 180, 111, 0.14), rgba(127, 176, 105, 0.06));
 }
 
 .probability-card:nth-child(1) {
@@ -768,9 +937,16 @@ input[type="range"] {
   .final-strip,
   .rounds-grid,
   .architecture-grid,
+  .data-grid,
+  .scenario-grid,
   .evidence-grid,
   .groups-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .reasoning-panel,
+  .route-strip {
+    grid-template-columns: 1fr;
   }
 }
 
@@ -804,6 +980,8 @@ input[type="range"] {
   .final-strip,
   .rounds-grid,
   .architecture-grid,
+  .data-grid,
+  .scenario-grid,
   .evidence-grid,
   .groups-grid {
     grid-template-columns: 1fr;
@@ -839,6 +1017,19 @@ input[type="range"] {
 
   .pipeline svg {
     transform: rotate(90deg);
+  }
+
+  .feature-flow {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .feature-flow svg {
+    transform: rotate(90deg);
+  }
+
+  .route-strip {
+    grid-template-columns: 1fr;
   }
 }
 
@@ -1071,12 +1262,16 @@ input[type="range"] {
 }
 
 .probability-card,
+.data-card,
+.scenario-card,
 .architecture-card {
   animation: card-rise 680ms cubic-bezier(0.16, 1, 0.3, 1) both;
   animation-delay: var(--card-delay, 0ms);
 }
 
 .probability-card:hover,
+.data-card:hover,
+.scenario-card:hover,
 .architecture-card:hover,
 .evidence-card:hover {
   transform: translateY(-5px);

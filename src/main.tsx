@@ -1,21 +1,13 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
 import {
-  Activity,
   BarChart3,
   Brain,
-  CalendarClock,
   ChevronRight,
-  CircleGauge,
   Cloud,
-  Cpu,
   DatabaseZap,
-  GitBranch,
-  Globe2,
   LineChart,
-  Medal,
   RefreshCw,
-  ShieldCheck,
   Sparkles,
   Trophy,
 } from "lucide-react";
@@ -79,10 +71,12 @@ function App() {
         <WeightPanel weights={weights} onUpdate={updateWeight} onReset={resetWeights} />
       </section>
       <ProbabilityBoard forecast={forecast} />
+      <DataIntelligenceSection />
       <BracketSection forecast={forecast} semis={semis} final={final} />
+      <ReasoningSection forecast={forecast} />
+      <ScenarioSection weights={weights} onApply={setWeights} />
       <GroupSection forecast={forecast} weights={weights} />
       <ArchitectureSection />
-      <EvidenceSection forecast={forecast} weights={weights} />
     </main>
   );
 }
@@ -387,6 +381,172 @@ function ProbabilityBoard({ forecast }: { forecast: Forecast }) {
   );
 }
 
+function DataIntelligenceSection() {
+  const sources = [
+    {
+      label: "历史战绩",
+      value: "世界杯与洲际杯赛",
+      detail: "用于杯赛经验、逆风局稳定性和淘汰赛修正。",
+    },
+    {
+      label: "球队排名",
+      value: "公开排名与实力档位",
+      detail: "用于综合实力基础分，并和阵容深度交叉校验。",
+    },
+    {
+      label: "阵容信息",
+      value: "核心球员与替补覆盖",
+      detail: "用于密集赛程下的深度评分和伤停敏感性。",
+    },
+    {
+      label: "分组赛程",
+      value: "12 组扩军模板",
+      detail: "用于小组循环赛、第三名筛选和淘汰赛落位。",
+    },
+  ];
+
+  return (
+    <section className="data-section">
+      <div className="section-heading wide">
+        <span className="section-kicker">Data Acquisition</span>
+        <h2>数据采集与特征工程</h2>
+        <p>
+          Agent 将公开足球信息整理为可复用的结构化数据，不依赖非公开赛事数据。当前版本内置数据快照，
+          后续可替换为 API 或爬虫采集结果。
+        </p>
+      </div>
+      <div className="data-grid">
+        {sources.map((source, index) => (
+          <article
+            className="data-card"
+            key={source.label}
+            style={{ "--card-delay": `${index * 90}ms` } as React.CSSProperties}
+          >
+            <span>{source.label}</span>
+            <strong>{source.value}</strong>
+            <p>{source.detail}</p>
+          </article>
+        ))}
+      </div>
+      <div className="feature-flow">
+        <span>raw data</span>
+        <ChevronRight size={17} />
+        <span>feature score</span>
+        <ChevronRight size={17} />
+        <span>match probability</span>
+        <ChevronRight size={17} />
+        <span>scoreline</span>
+        <ChevronRight size={17} />
+        <span>explanation</span>
+      </div>
+    </section>
+  );
+}
+
+function ReasoningSection({ forecast }: { forecast: Forecast }) {
+  const final = forecast.knockout.find((match) => match.round === "F");
+  const championProbability = forecast.probabilities.find((item) => item.team.code === forecast.champion.code);
+  const route = forecast.knockout
+    .filter((match) => match.winner.code === forecast.champion.code)
+    .map((match) => `${match.round}: ${match.home.name} ${match.homeGoals}-${match.awayGoals} ${match.away.name}`);
+
+  return (
+    <section className="reasoning-section">
+      <div className="reasoning-panel">
+        <div>
+          <span className="section-kicker">Reasoning Chain</span>
+          <h2>{forecast.champion.name} 为什么是当前冠军预测？</h2>
+          <p>
+            模型不只给出单点答案，而是给出从小组赛到决赛的路径、每场胜率、比分和关键依据。
+            默认权重下，{forecast.champion.name} 的冠军相对概率为{" "}
+            <strong>{championProbability ? (championProbability.probability * 100).toFixed(1) : "-"}%</strong>。
+          </p>
+        </div>
+        <div className="reasoning-stack">
+          {final?.explanation.map((line, index) => (
+            <div className="reasoning-step" key={line}>
+              <span>{String(index + 1).padStart(2, "0")}</span>
+              <p>{line}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+      <div className="route-strip">
+        {route.slice(-5).map((item, index) => (
+          <span key={item} style={{ "--card-delay": `${index * 90}ms` } as React.CSSProperties}>
+            {item}
+          </span>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function ScenarioSection({
+  weights,
+  onApply,
+}: {
+  weights: Weights;
+  onApply: (weights: Weights) => void;
+}) {
+  const scenarios: { title: string; text: string; weights: Weights }[] = [
+    {
+      title: "稳态实力模型",
+      text: "更重视长期实力和阵容深度，适合评估冠军级强队下限。",
+      weights: defaultWeights,
+    },
+    {
+      title: "状态爆发模型",
+      text: "提高近期状态权重，观察黑马球队是否能突破默认路径。",
+      weights: { strength: 24, form: 38, depth: 14, knockout: 14, travel: 10 },
+    },
+    {
+      title: "杯赛经验模型",
+      text: "强调淘汰赛经验和低比分能力，适合模拟强强对话。",
+      weights: { strength: 28, form: 16, depth: 16, knockout: 30, travel: 10 },
+    },
+    {
+      title: "北美适应模型",
+      text: "提高场地适应权重，测试东道主与美洲球队的赛程红利。",
+      weights: { strength: 26, form: 18, depth: 16, knockout: 12, travel: 28 },
+    },
+  ];
+
+  return (
+    <section className="scenario-section">
+      <div className="section-heading wide">
+        <span className="section-kicker">What-if Lab</span>
+        <h2>情景实验：评审可现场切换模型假设</h2>
+        <p>
+          预测逻辑不固定在一组参数里。点击不同情景后，Agent 会重算冠军概率、小组出线、淘汰赛路径和比分。
+        </p>
+      </div>
+      <div className="scenario-grid">
+        {scenarios.map((scenario, index) => {
+          const active = (Object.keys(weights) as WeightKey[]).every((key) => weights[key] === scenario.weights[key]);
+          return (
+            <button
+              className={`scenario-card ${active ? "active" : ""}`}
+              key={scenario.title}
+              onClick={() => onApply(scenario.weights)}
+              style={{ "--card-delay": `${index * 80}ms` } as React.CSSProperties}
+              type="button"
+            >
+              <span>{scenario.title}</span>
+              <p>{scenario.text}</p>
+              <strong>
+                {Object.entries(scenario.weights)
+                  .map(([key, value]) => `${weightMeta[key as WeightKey].short}${value}`)
+                  .join(" / ")}
+              </strong>
+            </button>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
 function BracketSection({
   forecast,
   semis,
@@ -554,87 +714,6 @@ function ArchitectureSection() {
         <span>可视化页面</span>
         <ChevronRight size={18} />
         <span>论坛提交</span>
-      </div>
-    </section>
-  );
-}
-
-function EvidenceSection({ forecast, weights }: { forecast: Forecast; weights: Weights }) {
-  const champion = forecast.champion;
-  const final = forecast.knockout.find((match) => match.round === "F");
-  const evidence = [
-    {
-      icon: CircleGauge,
-      label: "核心结论",
-      value: `${champion.name} 冠军`,
-      text: champion.note,
-    },
-    {
-      icon: LineChart,
-      label: "权重快照",
-      value: Object.entries(weights)
-        .map(([key, value]) => `${weightMeta[key as WeightKey].short}${value}`)
-        .join(" / "),
-      text: "评审可调节权重观察冠军路径是否稳定，从而检验模型鲁棒性。",
-    },
-    {
-      icon: Medal,
-      label: "决赛推演",
-      value: final ? `${final.home.name} ${final.homeGoals}-${final.awayGoals} ${final.away.name}` : "-",
-      text: final ? final.explanation[0] : "决赛暂未生成。",
-    },
-    {
-      icon: ShieldCheck,
-      label: "合规说明",
-      value: "公开数据 + 明示假设",
-      text: "页面不抓取非公开赛事数据，不绕过天池规则，预测结果保留可解释假设。",
-    },
-  ];
-
-  return (
-    <section className="evidence-section">
-      <div className="section-heading">
-        <span className="section-kicker">Submission Evidence</span>
-        <h2>论坛发帖可直接引用的说明</h2>
-        <p>这部分对应赛题要求里的系统架构、可视化呈现、创新与创意、加分项和 Qoder 使用链路。</p>
-      </div>
-      <div className="evidence-grid">
-        {evidence.map((item) => (
-          <article className="evidence-card" key={item.label}>
-            <item.icon size={22} />
-            <span>{item.label}</span>
-            <strong>{item.value}</strong>
-            <p>{item.text}</p>
-          </article>
-        ))}
-      </div>
-      <div className="toolchain-panel">
-        <div>
-          <span className="section-kicker">Qoder Toolchain</span>
-          <h3>开发过程证据清单</h3>
-        </div>
-        <ul>
-          <li>
-            <Cpu size={16} />
-            Qoder CLI 登录账号：macy200201@gmail.com，状态已验证。
-          </li>
-          <li>
-            <GitBranch size={16} />
-            代码、架构文档、提交材料均保留在本地工作区，可截图展示。
-          </li>
-          <li>
-            <CalendarClock size={16} />
-            赛题提交截止：2026-07-16 23:59:59。
-          </li>
-          <li>
-            <Globe2 size={16} />
-            完成构建后可部署为公开 URL，并放入天池论坛帖。
-          </li>
-          <li>
-            <Activity size={16} />
-            后续可接入 Qwen API 或百炼应用接口，把静态推演升级为对话式 Agent。
-          </li>
-        </ul>
       </div>
     </section>
   );
