@@ -1,0 +1,843 @@
+:root {
+  color-scheme: dark;
+  font-family:
+    "Aptos",
+    "Geist",
+    "SF Pro Display",
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    sans-serif;
+  background: #11130f;
+  color: #f4f1e8;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  --bg: #11130f;
+  --panel: #191d17;
+  --panel-2: #20261f;
+  --line: rgba(244, 241, 232, 0.12);
+  --muted: #a9ad9c;
+  --text: #f4f1e8;
+  --accent: #7fb069;
+  --accent-2: #d0b46f;
+  --danger: #c66d58;
+  --steel: #7aa0a8;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100dvh;
+  background:
+    radial-gradient(circle at top left, rgba(127, 176, 105, 0.17), transparent 30rem),
+    radial-gradient(circle at 75% 5%, rgba(122, 160, 168, 0.15), transparent 26rem),
+    linear-gradient(135deg, #11130f 0%, #161a15 46%, #10130f 100%);
+}
+
+button,
+input,
+a {
+  font: inherit;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.app-shell {
+  overflow: hidden;
+}
+
+.hero-section,
+.probability-section,
+.bracket-section,
+.groups-section,
+.architecture-section,
+.evidence-section,
+.control-band {
+  width: min(1440px, calc(100% - 40px));
+  margin: 0 auto;
+}
+
+.hero-section {
+  min-height: 94dvh;
+  padding: 72px 0 46px;
+  display: flex;
+  align-items: center;
+}
+
+.hero-grid {
+  width: 100%;
+  display: grid;
+  grid-template-columns: minmax(0, 1.12fr) minmax(380px, 0.88fr);
+  gap: 56px;
+  align-items: center;
+}
+
+.hero-copy {
+  max-width: 790px;
+}
+
+.eyebrow,
+.section-kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--accent-2);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.77rem;
+  font-weight: 800;
+}
+
+h1,
+h2,
+h3,
+p {
+  margin: 0;
+}
+
+.hero-copy h1 {
+  margin-top: 24px;
+  font-size: clamp(3.1rem, 7vw, 7.6rem);
+  line-height: 0.92;
+  letter-spacing: 0;
+  max-width: 860px;
+}
+
+.hero-lede {
+  margin-top: 30px;
+  color: #c9ccbd;
+  font-size: clamp(1.03rem, 1.5vw, 1.26rem);
+  line-height: 1.72;
+  max-width: 750px;
+}
+
+.hero-lede strong {
+  color: var(--text);
+}
+
+.hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin-top: 34px;
+}
+
+.primary-action,
+.secondary-action,
+.icon-button {
+  border: 1px solid var(--line);
+  min-height: 46px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  transition:
+    transform 180ms ease,
+    border-color 180ms ease,
+    background 180ms ease;
+}
+
+.primary-action {
+  background: #ecdfb8;
+  color: #15150f;
+  padding: 0 18px 0 22px;
+  font-weight: 800;
+}
+
+.secondary-action {
+  background: rgba(244, 241, 232, 0.06);
+  color: var(--text);
+  padding: 0 20px;
+  font-weight: 700;
+}
+
+.primary-action:hover,
+.secondary-action:hover,
+.icon-button:hover {
+  transform: translateY(-1px);
+  border-color: rgba(244, 241, 232, 0.34);
+}
+
+.primary-action:active,
+.secondary-action:active,
+.icon-button:active {
+  transform: translateY(1px) scale(0.99);
+}
+
+.metadata-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 40px;
+  color: #aeb3a6;
+  font-size: 0.86rem;
+}
+
+.metadata-strip span {
+  border: 1px solid var(--line);
+  background: rgba(244, 241, 232, 0.04);
+  padding: 9px 12px;
+}
+
+.hero-visual {
+  display: grid;
+  gap: 16px;
+}
+
+.champion-card,
+.weight-panel,
+.probability-card,
+.match-card,
+.group-card,
+.architecture-card,
+.evidence-card,
+.toolchain-panel {
+  background: linear-gradient(180deg, rgba(244, 241, 232, 0.08), rgba(244, 241, 232, 0.035));
+  border: 1px solid var(--line);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    0 24px 60px rgba(0, 0, 0, 0.2);
+}
+
+.champion-card {
+  min-height: 540px;
+  padding: 34px;
+  position: relative;
+  overflow: hidden;
+}
+
+.champion-card::before {
+  content: "";
+  position: absolute;
+  inset: auto -8% -12% auto;
+  width: 290px;
+  height: 290px;
+  border: 1px solid rgba(208, 180, 111, 0.28);
+  transform: rotate(15deg);
+}
+
+.card-topline,
+.probability-card-head,
+.panel-heading,
+.match-confidence,
+.probability-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.card-topline {
+  color: var(--accent-2);
+  font-weight: 800;
+  text-transform: uppercase;
+  font-size: 0.78rem;
+  letter-spacing: 0.08em;
+}
+
+.champion-code {
+  margin-top: 64px;
+  font-size: clamp(4rem, 8vw, 8.5rem);
+  line-height: 0.82;
+  font-weight: 900;
+  color: rgba(244, 241, 232, 0.12);
+  letter-spacing: 0;
+}
+
+.champion-card h2 {
+  margin-top: -8px;
+  font-size: clamp(2rem, 4vw, 4.4rem);
+  line-height: 1;
+}
+
+.champion-card p {
+  margin-top: 28px;
+  color: #ccd0c2;
+  line-height: 1.72;
+  max-width: 460px;
+}
+
+.champion-metrics {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-top: 28px;
+}
+
+.metric {
+  border-top: 1px solid var(--line);
+  padding-top: 14px;
+}
+
+.metric span {
+  display: block;
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+
+.metric strong {
+  display: block;
+  margin-top: 6px;
+  font-size: 1.35rem;
+}
+
+.top-three {
+  border: 1px solid var(--line);
+  background: rgba(17, 19, 15, 0.78);
+  padding: 14px;
+}
+
+.rank-row {
+  display: grid;
+  grid-template-columns: 32px minmax(72px, 1fr) minmax(90px, 1.2fr) 58px;
+  gap: 10px;
+  align-items: center;
+  min-height: 38px;
+  color: #dfe2d5;
+}
+
+.rank-index {
+  color: var(--accent-2);
+  font-variant-numeric: tabular-nums;
+}
+
+.rank-team {
+  font-weight: 800;
+}
+
+.rank-bar,
+.probability-line {
+  height: 8px;
+  background: rgba(244, 241, 232, 0.08);
+  overflow: hidden;
+}
+
+.rank-bar span,
+.probability-line span {
+  display: block;
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent), var(--accent-2));
+}
+
+.rank-value {
+  color: #f1e6c5;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.control-band {
+  display: grid;
+  grid-template-columns: minmax(0, 0.82fr) minmax(420px, 1.18fr);
+  gap: 28px;
+  align-items: start;
+  padding: 26px 0 92px;
+}
+
+.control-copy {
+  padding: 32px 0;
+}
+
+.control-copy h2,
+.section-heading h2 {
+  margin-top: 12px;
+  font-size: clamp(2.2rem, 4vw, 4.2rem);
+  line-height: 1.02;
+  letter-spacing: 0;
+}
+
+.control-copy p,
+.section-heading p {
+  margin-top: 18px;
+  color: #bfc3b5;
+  line-height: 1.75;
+  max-width: 720px;
+}
+
+.weight-panel {
+  padding: 28px;
+}
+
+.panel-heading {
+  margin-bottom: 20px;
+}
+
+.panel-heading h3 {
+  margin-top: 8px;
+  font-size: 1.45rem;
+}
+
+.icon-button {
+  width: 44px;
+  height: 44px;
+  color: var(--text);
+  background: rgba(244, 241, 232, 0.05);
+  cursor: pointer;
+}
+
+.weight-row {
+  display: grid;
+  grid-template-columns: minmax(160px, 1fr) 44px minmax(180px, 0.9fr);
+  gap: 16px;
+  align-items: center;
+  padding: 18px 0;
+  border-top: 1px solid var(--line);
+}
+
+.weight-label strong,
+.weight-label small {
+  display: block;
+}
+
+.weight-label strong {
+  color: #f2eddf;
+}
+
+.weight-label small {
+  margin-top: 5px;
+  color: var(--muted);
+  line-height: 1.35;
+}
+
+.weight-value {
+  color: var(--accent-2);
+  font-weight: 900;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+input[type="range"] {
+  width: 100%;
+  accent-color: var(--accent);
+}
+
+.probability-section,
+.bracket-section,
+.groups-section,
+.architecture-section,
+.evidence-section {
+  padding: 34px 0 96px;
+}
+
+.section-heading {
+  margin-bottom: 30px;
+  max-width: 900px;
+}
+
+.section-heading.wide {
+  max-width: 1100px;
+}
+
+.probability-grid {
+  display: grid;
+  grid-template-columns: 1.5fr 1fr 1fr 1.2fr;
+  gap: 14px;
+}
+
+.probability-card {
+  min-height: 190px;
+  padding: 22px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.probability-card:nth-child(1) {
+  grid-row: span 2;
+  min-height: 394px;
+}
+
+.probability-card:nth-child(6) {
+  grid-column: span 2;
+}
+
+.probability-card-head {
+  color: var(--muted);
+  font-weight: 800;
+}
+
+.probability-card h3 {
+  margin: 28px 0 18px;
+  font-size: clamp(1.4rem, 2.4vw, 2.7rem);
+}
+
+.probability-meta {
+  color: #d8dccf;
+  font-variant-numeric: tabular-nums;
+}
+
+.final-strip {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1.4fr;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+
+.rounds-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+  align-items: start;
+}
+
+.round-column {
+  border: 1px solid var(--line);
+  background: rgba(244, 241, 232, 0.03);
+  padding: 12px;
+}
+
+.round-title {
+  padding: 10px 8px 16px;
+  color: var(--accent-2);
+  text-transform: uppercase;
+  font-weight: 900;
+  letter-spacing: 0.06em;
+}
+
+.match-card {
+  padding: 16px;
+  margin-bottom: 10px;
+}
+
+.match-card.featured {
+  background: linear-gradient(135deg, rgba(127, 176, 105, 0.22), rgba(208, 180, 111, 0.11));
+}
+
+.match-card.compact {
+  margin-bottom: 0;
+}
+
+.match-slot {
+  color: var(--muted);
+  font-size: 0.78rem;
+  margin-bottom: 12px;
+}
+
+.team-line {
+  min-height: 34px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 34px;
+  gap: 10px;
+  align-items: center;
+  color: #aeb3a6;
+}
+
+.team-line span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.team-line.winner {
+  color: #f8f0d8;
+  font-weight: 900;
+}
+
+.team-line strong {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.match-confidence {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 0.86rem;
+}
+
+.match-confidence strong {
+  color: var(--accent-2);
+}
+
+.match-reasons {
+  margin: 16px 0 0;
+  padding: 0 0 0 18px;
+  color: #cfd3c5;
+  line-height: 1.55;
+}
+
+.match-reasons li + li {
+  margin-top: 8px;
+}
+
+.groups-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.group-card {
+  padding: 18px;
+}
+
+.group-title {
+  color: var(--accent-2);
+  font-weight: 900;
+  margin-bottom: 12px;
+}
+
+.standing-row {
+  display: grid;
+  grid-template-columns: 26px minmax(0, 1fr) 54px 54px;
+  gap: 8px;
+  align-items: center;
+  min-height: 37px;
+  border-top: 1px solid rgba(244, 241, 232, 0.08);
+  color: #d7dbcd;
+}
+
+.standing-index {
+  width: 22px;
+  height: 22px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(244, 241, 232, 0.07);
+  color: var(--muted);
+  font-size: 0.75rem;
+  font-weight: 900;
+}
+
+.standing-index.qualified {
+  background: rgba(127, 176, 105, 0.23);
+  color: #dbf3ce;
+}
+
+.standing-index.third {
+  background: rgba(208, 180, 111, 0.18);
+  color: #f2dfaa;
+}
+
+.standing-team {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 800;
+}
+
+.standing-points,
+.standing-score {
+  color: var(--muted);
+  font-size: 0.8rem;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.architecture-grid {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr 1fr 1.2fr;
+  gap: 14px;
+}
+
+.architecture-card {
+  padding: 28px;
+  min-height: 250px;
+}
+
+.architecture-card svg {
+  color: var(--accent-2);
+}
+
+.architecture-card h3 {
+  margin-top: 28px;
+  font-size: 1.45rem;
+}
+
+.architecture-card p {
+  margin-top: 14px;
+  color: #bdc2b4;
+  line-height: 1.68;
+}
+
+.pipeline {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 18px;
+  border: 1px solid var(--line);
+  background: rgba(17, 19, 15, 0.62);
+  padding: 18px;
+  color: #e7e1d0;
+  font-weight: 900;
+}
+
+.pipeline svg {
+  color: var(--accent);
+  flex: 0 0 auto;
+}
+
+.evidence-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.evidence-card {
+  min-height: 230px;
+  padding: 24px;
+}
+
+.evidence-card svg {
+  color: var(--accent-2);
+}
+
+.evidence-card span {
+  display: block;
+  margin-top: 24px;
+  color: var(--muted);
+  font-size: 0.82rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.evidence-card strong {
+  display: block;
+  margin-top: 10px;
+  color: var(--text);
+  font-size: 1.32rem;
+}
+
+.evidence-card p {
+  margin-top: 14px;
+  color: #bcc2b3;
+  line-height: 1.6;
+}
+
+.toolchain-panel {
+  margin-top: 18px;
+  padding: 28px;
+  display: grid;
+  grid-template-columns: minmax(240px, 0.8fr) minmax(0, 1.2fr);
+  gap: 28px;
+}
+
+.toolchain-panel h3 {
+  margin-top: 10px;
+  font-size: 1.7rem;
+}
+
+.toolchain-panel ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 12px;
+}
+
+.toolchain-panel li {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  color: #d2d7c9;
+  line-height: 1.5;
+}
+
+.toolchain-panel li svg {
+  color: var(--accent);
+  margin-top: 3px;
+  flex: 0 0 auto;
+}
+
+@media (max-width: 1100px) {
+  .hero-grid,
+  .control-band,
+  .toolchain-panel {
+    grid-template-columns: 1fr;
+  }
+
+  .hero-visual {
+    max-width: 720px;
+  }
+
+  .probability-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .final-strip,
+  .rounds-grid,
+  .architecture-grid,
+  .evidence-grid,
+  .groups-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 720px) {
+  .hero-section,
+  .probability-section,
+  .bracket-section,
+  .groups-section,
+  .architecture-section,
+  .evidence-section,
+  .control-band {
+    width: min(100% - 28px, 1440px);
+  }
+
+  .hero-section {
+    min-height: auto;
+    padding-top: 46px;
+  }
+
+  .hero-copy h1 {
+    font-size: clamp(2.7rem, 16vw, 4.5rem);
+  }
+
+  .champion-card {
+    min-height: auto;
+    padding: 24px;
+  }
+
+  .champion-metrics,
+  .probability-grid,
+  .final-strip,
+  .rounds-grid,
+  .architecture-grid,
+  .evidence-grid,
+  .groups-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .probability-card:nth-child(1),
+  .probability-card:nth-child(6) {
+    grid-row: auto;
+    grid-column: auto;
+    min-height: 190px;
+  }
+
+  .weight-row {
+    grid-template-columns: 1fr 40px;
+  }
+
+  .weight-row input {
+    grid-column: 1 / -1;
+  }
+
+  .rank-row {
+    grid-template-columns: 24px minmax(70px, 1fr) 54px;
+  }
+
+  .rank-bar {
+    display: none;
+  }
+
+  .pipeline {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .pipeline svg {
+    transform: rotate(90deg);
+  }
+}
