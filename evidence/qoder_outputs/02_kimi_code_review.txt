@@ -1,0 +1,48 @@
+以下是对当前 React/Vite 世界杯冠军预测 Agent 的代码质量检查与改造建议，按优先级整理，可直接作为 Qoder 开发过程记录。
+
+## 1. 预测模型（forecast.ts）
+
+当前模型最大的问题是“单路径确定性推演 + 概率排序两条线脱节”。`buildForecast` 走一条确定性淘汰赛路径得出冠军，而 `championProbabilities` 用另一套 softmax 公式排序，两者可能不一致。例如树状对阵会显著影响谁能进决赛，但概率列表没有反映对阵结构。建议：
+
+- 引入蒙特卡洛/多次采样：按 `winProbability` 做概率抽样，模拟成千上万条淘汰赛路径，再统计每支队夺冠频率。这样概率才与推演逻辑同源。
+- 把魔数参数外置配置化：`0.16 / 0.055 / 0.035 / 1.12 / 1.25 / 4.3` 等应集中到 `modelConfig`，附带注释说明来源与可调范围。
+- `normalizeWeights` 命名有误导。它只是把单项钳位到 0–60，并没有让权重之和归一化。应改名为 `clampWeights`，或在 UI 层面明确显示“当前权重总和”。
+- `scoreline` 强制去平局，若 `probability < 0.5` 会给客队加 1 球，可能和 `winner` 判定错位。应统一由概率驱动比分生成。
+- `groupSchedule` 与 `r32Slots` 暗含“每组 4 队、共 12 组、取 8 个第三名”的赛制，建议用类型/常量文档化，避免未来数据变化时静默出错。
+
+## 2. 类型定义（types.ts）
+
+类型整体清晰，但还有细化空间：
+
+- `confederation` 应抽成字面联合类型（`"UEFA" | "CONMEBOL" | ...`），目前在 `championProbabilities` 里靠字符串匹配，拼写错误会被忽略。
+- `rank` 出现重复值（GER 与 ENG 同为 4），建议加唯一性校验或说明这是 FIFA 排名并列，而非业务 ID。
+- 建议区分 `RawWeights`（用户输入）与 `NormalizedWeights`（引擎使用），让类型系统帮助约束模型入口。
+- `MatchPrediction` 内直接嵌 `Team` 对象，未来若要持久化/序列化比赛结果，建议改为 `teamCode` 引用，再用查找函数还原。
+
+## 3. 可维护性
+
+- `main.tsx` 接近 500 行且包含所有组件，应按职责拆分为 `components/Hero.tsx`、`WeightPanel.tsx`、`ProbabilityBoard.tsx`、`BracketSection.tsx` 等，降低单文件认知负担。
+- `weightMeta` 与 `defaultWeights` 分居 `main.tsx` 与 `data.ts`，配置语义应统一放到 `config.ts` 或 `data.ts`。
+- 样式文件 `styles.css` 已经 840 行，可考虑按组件拆成 CSS Modules 或至少按区块拆文件；目前的布局魔数（grid 比例、minmax 值）很多，建议补充 spacing/scale 变量。
+- 快照日期 `2026-07-03` 硬编码在 UI 中，应通过构建时注入或从数据版本读取。
+- 证据区硬编码了 Qoder 登录邮箱等敏感/个人信息，建议移除或改为占位提示。
+- 无单元测试、无 ESLint/Prettier 配置。至少应为 `forecast.ts` 的核心函数补充测试（如 `weightedScore`、`winProbability`、`resolveSeed`）。
+
+## 4. 构建验证
+
+- `package.json` 中 React 版本为 `^18.3.1`，而 `@types/react` 是 `^19.2.17`，类型版本不匹配，可能引发 JSX/类型错误，应锁定 `@types/react@18`。
+- `@vitejs/plugin-react` 应放入 `devDependencies`。
+- `tsconfig.json` 的 `moduleResolution` 为 `Node`，Vite 项目更推荐 `Bundler`，可避免某些 ESM 解析警告。
+- 目前没有 CI 工作流验证 `typecheck` 与 `build`，建议补充 GitHub Actions 在 push/PR 时跑 `pnpm typecheck && pnpm build`，防止静态页面部署失败。
+- README 使用 `npm install`，但仓库已有 `pnpm-lock.yaml`，建议统一为 `pnpm install` 并说明 Node 版本。
+
+## 5. 后续接入 Qwen API 的改造点
+
+当前是纯前端静态推演，要升级为对话式 Agent，需要分三层改造：
+
+- **服务代理层**：Qwen API Key 不能暴露到浏览器。应新增一个后端代理（Vercel/阿里云函数/Cloudflare Workers），前端请求自家 `/api/chat`，由服务端调用 Qwen 并返回结果。若只想前端演示，可用环境变量 + 构建时注入，但需在文档中声明安全风险。
+- **Prompt 工程层**：封装 `buildAnalysisPrompt(weights, forecast)`，把当前权重、小组排名、淘汰赛路径、关键比赛解释按结构化文本喂给模型，要求它给出“为什么 X 是冠军”“调整哪项权重会改变结果”等可解释回答。可再做一个 `buildWhatIfPrompt` 支持用户假设某队晋级。
+- **状态与 UI 层**：新增聊天组件，维护 `messages` 状态；接入 SSE 流式输出以提升体验；对返回内容做 Markdown/结构化渲染。若希望模型直接返回 JSON（如推荐新权重），需加 schema 约束与解析容错。
+- **Fallback 策略**：Qwen 失败时回退到本地解释模板，保证页面核心功能不崩。
+
+总体来看，当前代码已具备“可解释预测 + 可视化”的骨架，下一步重点是把模型从单路径升级为概率采样、拆分组件并补齐测试，再引入后端代理安全接入 Qwen API，即可从静态演示进化为真正的对话式 Agent。

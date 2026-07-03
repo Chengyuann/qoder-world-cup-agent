@@ -41,16 +41,24 @@ Agent 分为五层：
 
 ## Qoder / QoderWork 使用说明
 
-本作品开发过程使用 Qoder CLI 国际版作为参赛工具链入口，CLI 已使用 `macy200201@gmail.com` 登录。后续路演 PPT、文档和演示材料将通过 QoderWork 补充制作。
+本作品开发过程使用 Qoder CLI 国际版作为参赛工具链入口，CLI 已使用 `macy200201@gmail.com` 登录，并已确认可用模型包括 Qwen3.7-Max、Qwen3.7-Plus、Kimi-K2.7-Code 等。
+
+Qoder CLI 实际参与了以下环节：
+
+- 使用 Qwen3.7-Max 生成系统架构、数据流、推理链路和可视化亮点总结。
+- 使用 Kimi-K2.7-Code 对当前 React/Vite 代码做代码质量检查，并给出模型、类型、构建和 Qwen API 接入建议。
+- 使用 Qwen3.7-Plus 生成路演材料提纲。
+
+对应原始输出和截图式证据已整理在 `evidence/` 目录。
 
 建议插入截图：
 
-1. Qoder CLI 登录状态截图
-2. Qoder 项目代码生成/修改过程截图
-3. 本地运行页面截图
-4. 架构设计文档截图
-5. 构建验证截图
-6. QoderWork 路演材料截图
+1. `evidence/screenshots/00_qoder_cli_status_models.png`：Qoder CLI 登录状态与可用模型
+2. `evidence/screenshots/01_qwen_architecture.png`：Qwen3.7-Max 架构总结对话结果
+3. `evidence/screenshots/02_kimi_code_review.png`：Kimi-K2.7-Code 代码质量检查对话结果
+4. `evidence/screenshots/03_qwen_roadshow_outline.png`：Qwen3.7-Plus 路演提纲对话结果
+5. `evidence/screenshots/04_qoder_desktop_project_window.png`：Qoder Desktop 项目窗口截图
+6. 如评审明确要求 QoderWork 独立界面，请补充 QoderWork 路演材料页面截图
 
 ## 验证结果
 
