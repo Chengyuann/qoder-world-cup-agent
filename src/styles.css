@@ -689,7 +689,31 @@ input[type="range"] {
 .match-slot {
   color: var(--muted);
   font-size: 0.78rem;
+  margin-bottom: 8px;
+}
+
+.match-status {
+  display: inline-flex;
+  width: fit-content;
   margin-bottom: 12px;
+  padding: 4px 7px;
+  border: 1px solid rgba(244, 241, 232, 0.1);
+  color: #d9decc;
+  background: rgba(244, 241, 232, 0.045);
+  font-size: 0.72rem;
+  font-weight: 900;
+}
+
+.match-status.actual {
+  color: #f2dfaa;
+  border-color: rgba(208, 180, 111, 0.24);
+  background: rgba(208, 180, 111, 0.1);
+}
+
+.match-status.forecast {
+  color: #dbf3ce;
+  border-color: rgba(127, 176, 105, 0.24);
+  background: rgba(127, 176, 105, 0.1);
 }
 
 .team-line {
@@ -758,7 +782,7 @@ input[type="range"] {
 
 .standing-row {
   display: grid;
-  grid-template-columns: 26px minmax(0, 1fr) 54px 54px;
+  grid-template-columns: 26px minmax(0, 1fr) 54px 42px 54px;
   gap: 8px;
   align-items: center;
   min-height: 37px;
@@ -796,6 +820,7 @@ input[type="range"] {
 }
 
 .standing-points,
+.standing-gd,
 .standing-score {
   color: var(--muted);
   font-size: 0.8rem;

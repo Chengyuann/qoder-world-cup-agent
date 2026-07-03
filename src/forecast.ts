@@ -1,4 +1,4 @@
-import { defaultWeights, teams } from "./data";
+import { defaultWeights, groupTables, knockoutFixtures, teams } from "./data";
 import type {
   ChampionProbability,
   Forecast,
@@ -50,23 +50,43 @@ function makeMatch(
   home: Team,
   away: Team,
   weights: Weights,
+  options: {
+    status?: MatchPrediction["status"];
+    homeGoals?: number;
+    awayGoals?: number;
+    winner?: Team;
+    scoreNote?: string;
+  } = {},
 ): MatchPrediction {
   const homeWin = winProbability(home, away, weights);
-  const winner = homeWin >= 0.5 ? home : away;
-  const [homeGoals, awayGoals] = scoreline(home, away, homeWin);
+  const winner = options.winner ?? (homeWin >= 0.5 ? home : away);
+  const predictedScore = scoreline(home, away, homeWin);
+  const homeGoals = options.homeGoals ?? predictedScore[0];
+  const awayGoals = options.awayGoals ?? predictedScore[1];
   const leader = winner === home ? home : away;
   const rival = winner === home ? away : home;
   const leaderScore = weightedScore(leader, weights);
   const rivalScore = weightedScore(rival, weights);
-  const explanation = [
-    `${leader.name} 综合评分 ${leaderScore.toFixed(1)}，高于 ${rival.name} 的 ${rivalScore.toFixed(1)}。`,
-    leader.depth > rival.depth
-      ? `${leader.name} 阵容深度优势明显，适合连续淘汰赛。`
-      : `${leader.name} 胜出主要来自效率和防守稳定性，而不是板凳厚度。`,
-    leader.knockout > rival.knockout
-      ? `${leader.name} 杯赛经验权重领先，点球或低比分场景更稳。`
-      : `${leader.name} 依靠近期状态抵消杯赛经验劣势。`,
-  ];
+  const status = options.status ?? "forecast";
+  const modelBacksWinner = winner === home ? homeWin >= 0.5 : homeWin < 0.5;
+  const explanation =
+    status === "actual"
+      ? [
+          `真实赛果已锁定：${home.name} ${homeGoals}-${awayGoals} ${away.name}${options.scoreNote ? `（${options.scoreNote}）` : ""}。`,
+          modelBacksWinner
+            ? `模型赛前也倾向 ${leader.name}，综合评分 ${leaderScore.toFixed(1)} 对 ${rivalScore.toFixed(1)}。`
+            : `${leader.name} 以真实赛果推进，模型仍记录其相对评分 ${leaderScore.toFixed(1)} 对 ${rivalScore.toFixed(1)}，用于后续风险解释。`,
+          `${leader.name} 进入下一轮后，后续胜率继续由实力、状态、深度、杯赛经验和场地适应重新计算。`,
+        ]
+      : [
+          `${leader.name} 综合评分 ${leaderScore.toFixed(1)}，高于 ${rival.name} 的 ${rivalScore.toFixed(1)}。`,
+          leader.depth > rival.depth
+            ? `${leader.name} 阵容深度优势明显，适合连续淘汰赛。`
+            : `${leader.name} 胜出主要来自效率和防守稳定性，而不是板凳厚度。`,
+          leader.knockout > rival.knockout
+            ? `${leader.name} 杯赛经验权重领先，点球或低比分场景更稳。`
+            : `${leader.name} 依靠近期状态抵消杯赛经验劣势。`,
+        ];
 
   return {
     id,
@@ -79,61 +99,31 @@ function makeMatch(
     awayWin: 1 - homeWin,
     homeGoals,
     awayGoals,
+    status,
+    scoreNote: options.scoreNote,
     explanation,
   };
 }
 
-function groupSchedule(groupTeams: Team[]): [Team, Team][] {
-  return [
-    [groupTeams[0], groupTeams[1]],
-    [groupTeams[2], groupTeams[3]],
-    [groupTeams[0], groupTeams[2]],
-    [groupTeams[1], groupTeams[3]],
-    [groupTeams[0], groupTeams[3]],
-    [groupTeams[1], groupTeams[2]],
-  ];
-}
-
 function projectGroups(weights: Weights): GroupResult[] {
-  const groups = Array.from(new Set(teams.map((team) => team.group)));
+  const groups = Object.keys(groupTables);
   return groups.map((group) => {
-    const groupTeams = teams.filter((team) => team.group === group);
-    const table = groupTeams.map((team) => ({
+    const rows = groupTables[group];
+    const table = rows.map((row) => {
+      const team = findTeam(row.code);
+      return {
       team,
       score: weightedScore(team, weights),
-      expectedPoints: 0,
-      expectedGoalsFor: 0,
-      expectedGoalsAgainst: 0,
-    }));
-
-    for (const [home, away] of groupSchedule(groupTeams)) {
-      const probability = winProbability(home, away, weights);
-      const [homeGoals, awayGoals] = scoreline(home, away, probability);
-      const homeRow = table.find((row) => row.team.code === home.code);
-      const awayRow = table.find((row) => row.team.code === away.code);
-      if (!homeRow || !awayRow) continue;
-
-      homeRow.expectedGoalsFor += homeGoals;
-      homeRow.expectedGoalsAgainst += awayGoals;
-      awayRow.expectedGoalsFor += awayGoals;
-      awayRow.expectedGoalsAgainst += homeGoals;
-
-      if (homeGoals > awayGoals) {
-        homeRow.expectedPoints += 3;
-      } else if (homeGoals < awayGoals) {
-        awayRow.expectedPoints += 3;
-      } else {
-        homeRow.expectedPoints += 1;
-        awayRow.expectedPoints += 1;
-      }
-    }
-
-    table.sort((a, b) => {
-      if (b.expectedPoints !== a.expectedPoints) return b.expectedPoints - a.expectedPoints;
-      const goalDiffA = a.expectedGoalsFor - a.expectedGoalsAgainst;
-      const goalDiffB = b.expectedGoalsFor - b.expectedGoalsAgainst;
-      if (goalDiffB !== goalDiffA) return goalDiffB - goalDiffA;
-      return b.score - a.score;
+      played: row.played,
+      wins: row.wins,
+      draws: row.draws,
+      losses: row.losses,
+      expectedPoints: row.points,
+      expectedGoalsFor: row.goalsFor,
+      expectedGoalsAgainst: row.goalsAgainst,
+      goalDifference: row.goalDifference,
+      status: row.status,
+    };
     });
 
     return {
@@ -143,39 +133,25 @@ function projectGroups(weights: Weights): GroupResult[] {
   });
 }
 
-const r32Slots: [string, string, string][] = [
-  ["R32-1", "A1", "B2"],
-  ["R32-2", "C1", "D2"],
-  ["R32-3", "E1", "F2"],
-  ["R32-4", "G1", "H2"],
-  ["R32-5", "I1", "J2"],
-  ["R32-6", "K1", "L2"],
-  ["R32-7", "B1", "A2"],
-  ["R32-8", "D1", "C2"],
-  ["R32-9", "F1", "E2"],
-  ["R32-10", "H1", "G2"],
-  ["R32-11", "J1", "I2"],
-  ["R32-12", "L1", "K2"],
-  ["R32-13", "A3", "C3"],
-  ["R32-14", "D3", "F3"],
-  ["R32-15", "G3", "I3"],
-  ["R32-16", "J3", "L3"],
-];
-
-function resolveSeed(seed: string, groups: GroupResult[]): Team {
-  const group = seed[0];
-  const place = Number(seed.slice(1)) - 1;
-  const result = groups.find((item) => item.group === group);
-  if (!result) throw new Error(`Missing group ${group}`);
-  const standing = result.standings[place];
-  if (!standing) throw new Error(`Missing seed ${seed}`);
-  return standing.team;
+function findTeam(code: string): Team {
+  const team = teams.find((item) => item.code === code);
+  if (!team) throw new Error(`Missing team ${code}`);
+  return team;
 }
 
-function projectKnockout(groups: GroupResult[], weights: Weights): MatchPrediction[] {
-  const r32 = r32Slots.map(([id, homeSeed, awaySeed]) =>
-    makeMatch(id, "R32", `${homeSeed} vs ${awaySeed}`, resolveSeed(homeSeed, groups), resolveSeed(awaySeed, groups), weights),
-  );
+function projectKnockout(weights: Weights): MatchPrediction[] {
+  const r32 = knockoutFixtures.map((fixture) => {
+    const home = findTeam(fixture.home);
+    const away = findTeam(fixture.away);
+    const winner = fixture.winner ? findTeam(fixture.winner) : undefined;
+    return makeMatch(fixture.id, fixture.round, fixture.slot, home, away, weights, {
+      status: fixture.status,
+      homeGoals: fixture.homeGoals,
+      awayGoals: fixture.awayGoals,
+      winner,
+      scoreNote: fixture.scoreNote,
+    });
+  });
 
   const r16Pairs = [
     [0, 1],
@@ -191,7 +167,7 @@ function projectKnockout(groups: GroupResult[], weights: Weights): MatchPredicti
     makeMatch(
       `R16-${index + 1}`,
       "R16",
-      `R32-${a + 1} 胜者 vs R32-${b + 1} 胜者`,
+      `16 强 · ${r32[a].winner.name} vs ${r32[b].winner.name}`,
       r32[a].winner,
       r32[b].winner,
       weights,
@@ -225,8 +201,13 @@ function projectKnockout(groups: GroupResult[], weights: Weights): MatchPredicti
   return [...r32, ...r16, ...qf, ...sf, ...final];
 }
 
-function championProbabilities(weights: Weights): ChampionProbability[] {
-  const scores = teams.map((team) => {
+function championProbabilities(weights: Weights, knockout: MatchPrediction[]): ChampionProbability[] {
+  const activeCodes = new Set(
+    knockout
+      .filter((match) => match.round === "R16")
+      .flatMap((match) => [match.home.code, match.away.code]),
+  );
+  const scores = teams.filter((team) => activeCodes.has(team.code)).map((team) => {
     const score =
       weightedScore(team, weights) +
       team.attack * 0.06 +
@@ -251,14 +232,14 @@ function championProbabilities(weights: Weights): ChampionProbability[] {
 
 export function buildForecast(weights: Weights = defaultWeights): Forecast {
   const groups = projectGroups(weights);
-  const knockout = projectKnockout(groups, weights);
+  const knockout = projectKnockout(weights);
   const final = knockout.find((match) => match.round === "F");
   if (!final) throw new Error("Final not generated");
   return {
     groups,
     knockout,
     champion: final.winner,
-    probabilities: championProbabilities(weights),
+    probabilities: championProbabilities(weights, knockout),
   };
 }
 

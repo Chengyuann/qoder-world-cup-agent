@@ -21,9 +21,15 @@ export type Weights = Record<WeightKey, number>;
 export type GroupStanding = {
   team: Team;
   score: number;
+  played: number;
+  wins: number;
+  draws: number;
+  losses: number;
   expectedPoints: number;
   expectedGoalsFor: number;
   expectedGoalsAgainst: number;
+  goalDifference: number;
+  status: "qualified" | "thirdQualified" | "eliminated";
 };
 
 export type GroupResult = {
@@ -42,6 +48,8 @@ export type MatchPrediction = {
   awayWin: number;
   homeGoals: number;
   awayGoals: number;
+  status: "actual" | "forecast";
+  scoreNote?: string;
   explanation: string[];
 };
 

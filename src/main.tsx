@@ -6,12 +6,11 @@ import {
   ChevronRight,
   Cloud,
   DatabaseZap,
-  LineChart,
   RefreshCw,
   Sparkles,
   Trophy,
 } from "lucide-react";
-import { defaultWeights } from "./data";
+import { dataSnapshot, defaultWeights } from "./data";
 import { buildForecast, normalizeWeights, weightedScore } from "./forecast";
 import type { Forecast, MatchPrediction, Team, WeightKey, Weights } from "./types";
 import "./styles.css";
@@ -64,8 +63,8 @@ function App() {
           <span className="section-kicker">Model Control</span>
           <h2>冠军预测不是黑箱，所有权重都能现场调节。</h2>
           <p>
-            Agent 将每支球队的实力、状态、深度、杯赛经验和北美场地适应度转换为可解释分数，
-            再逐轮推演小组赛、32 强、16 强、四分之一决赛、半决赛和决赛。
+            Agent 使用已核对的 2026 世界杯小组与淘汰赛快照，锁定真实赛果，
+            再把未完赛路径交给权重模型继续推演。
           </p>
         </div>
         <WeightPanel weights={weights} onUpdate={updateWeight} onReset={resetWeights} />
@@ -167,12 +166,14 @@ function AmbientCanvas() {
 function Hero({ forecast, final }: { forecast: Forecast; final?: MatchPrediction }) {
   const champion = forecast.champion;
   const topThree = forecast.probabilities.slice(0, 3);
+  const r32Matches = forecast.knockout.filter((match) => match.round === "R32");
   const heroSignals = [
     `${topThree[0].team.name} ${(topThree[0].probability * 100).toFixed(1)}%`,
     `${topThree[1].team.name} ${(topThree[1].probability * 100).toFixed(1)}%`,
     `${topThree[2].team.name} ${(topThree[2].probability * 100).toFixed(1)}%`,
-    final ? `决赛 ${final.home.name} ${final.homeGoals}-${final.awayGoals} ${final.away.name}` : "决赛路径生成中",
-    `淘汰赛样本 ${forecast.knockout.length} 场`,
+    final ? `预测决赛 ${final.home.name} ${final.homeGoals}-${final.awayGoals} ${final.away.name}` : "决赛路径生成中",
+    `真实 32 强赛果 ${r32Matches.filter((match) => match.status === "actual").length} 场`,
+    `未完赛 32 强预测 ${r32Matches.filter((match) => match.status === "forecast").length} 场`,
   ];
 
   return (
@@ -185,8 +186,8 @@ function Hero({ forecast, final }: { forecast: Forecast; final?: MatchPrediction
           </div>
           <h1>世界杯冠军预测 Agent：从分组到决赛的可解释推演。</h1>
           <p className="hero-lede">
-            当前模型预测冠军为 <strong>{champion.name}</strong>。系统以公开足球强度指标、阵容结构、
-            近期状态和淘汰赛经验构建权重模型，并输出比分、赛程树和每轮推理依据。
+            当前模型在真实赛果快照基础上继续预测冠军为 <strong>{champion.name}</strong>。系统以公开分组、
+            小组积分、已结束 32 强赛果、阵容结构和淘汰赛经验构建推演链路。
           </p>
           <div className="hero-actions">
             <a href="#bracket" className="primary-action">
@@ -198,9 +199,9 @@ function Hero({ forecast, final }: { forecast: Forecast; final?: MatchPrediction
             </a>
           </div>
           <div className="metadata-strip">
-            <span>预测快照：2026-07-03</span>
-            <span>赛题：冠军预测 Agent</span>
-            <span>输出：公开页面 + 论坛帖</span>
+            <span>数据快照：{dataSnapshot.date}</span>
+            <span>{dataSnapshot.label}</span>
+            <span>真实赛果 + 模型续推</span>
           </div>
           <SignalTicker items={heroSignals} />
         </div>
@@ -384,24 +385,24 @@ function ProbabilityBoard({ forecast }: { forecast: Forecast }) {
 function DataIntelligenceSection() {
   const sources = [
     {
-      label: "历史战绩",
-      value: "世界杯与洲际杯赛",
-      detail: "用于杯赛经验、逆风局稳定性和淘汰赛修正。",
+      label: "官方分组",
+      value: "12 组 48 队",
+      detail: "按 FIFA / Olympics 公开页面核对，移除了不在正赛中的旧占位球队。",
     },
     {
-      label: "球队排名",
-      value: "公开排名与实力档位",
-      detail: "用于综合实力基础分，并和阵容深度交叉校验。",
+      label: "小组积分",
+      value: "最终排名与 GD",
+      detail: "采用 NBC Sports 公开最终小组表，页面展示真实晋级状态。",
     },
     {
-      label: "阵容信息",
-      value: "核心球员与替补覆盖",
-      detail: "用于密集赛程下的深度评分和伤停敏感性。",
+      label: "淘汰赛赛果",
+      value: "32 强已完赛锁定",
+      detail: "已结束场次不再模拟，后续轮次只从真实晋级球队继续推演。",
     },
     {
-      label: "分组赛程",
-      value: "12 组扩军模板",
-      detail: "用于小组循环赛、第三名筛选和淘汰赛落位。",
+      label: "模型特征",
+      value: "实力 / 状态 / 深度",
+      detail: "未完赛比赛继续使用权重模型输出胜率、比分和解释语句。",
     },
   ];
 
@@ -411,8 +412,7 @@ function DataIntelligenceSection() {
         <span className="section-kicker">Data Acquisition</span>
         <h2>数据采集与特征工程</h2>
         <p>
-          Agent 将公开足球信息整理为可复用的结构化数据，不依赖非公开赛事数据。当前版本内置数据快照，
-          后续可替换为 API 或爬虫采集结果。
+          {dataSnapshot.note} 数据层保留来源边界，页面只呈现可复核的赛程状态、预测结果和推理依据。
         </p>
       </div>
       <div className="data-grid">
@@ -502,7 +502,7 @@ function ScenarioSection({
     },
     {
       title: "杯赛经验模型",
-      text: "强调淘汰赛经验和低比分能力，适合模拟强强对话。",
+      text: "强调淘汰赛经验和低比分能力，适合预测强强对话。",
       weights: { strength: 28, form: 16, depth: 16, knockout: 30, travel: 10 },
     },
     {
@@ -567,7 +567,7 @@ function BracketSection({
       <div className="section-heading wide">
         <span className="section-kicker">Knockout Path</span>
         <h2>淘汰赛逐层推演</h2>
-        <p>每场比赛由双方综合评分、攻防错位和杯赛修正共同决定，并生成比分与解释。</p>
+        <p>32 强已结束场次使用真实赛果，未结束比赛与后续轮次由双方综合评分、攻防错位和杯赛修正生成预测。</p>
       </div>
 
       <div className="final-strip">
@@ -608,6 +608,10 @@ function MatchCard({
       style={{ "--confidence": `${confidence}%` } as React.CSSProperties}
     >
       <div className="match-slot">{match.slot}</div>
+      <div className={`match-status ${match.status}`}>
+        {match.status === "actual" ? "真实赛果" : "模型预测"}
+        {match.scoreNote && match.scoreNote !== "真实赛果" ? ` · ${match.scoreNote}` : ""}
+      </div>
       <div className={`team-line ${homeWinner ? "winner" : ""}`}>
         <span>{match.home.name}</span>
         <strong>{match.homeGoals}</strong>
@@ -617,7 +621,7 @@ function MatchCard({
         <strong>{match.awayGoals}</strong>
       </div>
       <div className="match-confidence">
-        <span>{match.winner.name} 胜率</span>
+        <span>{match.status === "actual" ? `${match.winner.name} 模型赛前胜率` : `${match.winner.name} 胜率`}</span>
         <strong>{confidence}%</strong>
       </div>
       {featured && (
@@ -635,9 +639,9 @@ function GroupSection({ forecast, weights }: { forecast: Forecast; weights: Weig
   return (
     <section className="groups-section">
       <div className="section-heading">
-        <span className="section-kicker">Group Simulation</span>
-        <h2>小组赛出线预测</h2>
-        <p>小组赛采用单循环预期比分，按积分、净胜球、模型评分排序。每组前两名与四个三名进入淘汰赛模板。</p>
+        <span className="section-kicker">Group Snapshot</span>
+        <h2>小组赛真实积分与晋级状态</h2>
+        <p>表格按 2026-07-03 公开最终小组表展示：前两名直接晋级，第三名仅在公开资料标记为晋级时进入 32 强。</p>
       </div>
       <div className="groups-grid">
         {forecast.groups.map((group) => (
@@ -645,11 +649,23 @@ function GroupSection({ forecast, weights }: { forecast: Forecast; weights: Weig
             <div className="group-title">Group {group.group}</div>
             {group.standings.map((standing, index) => (
               <div className="standing-row" key={standing.team.code}>
-                <span className={`standing-index ${index < 2 ? "qualified" : index === 2 ? "third" : ""}`}>
+                <span
+                  className={`standing-index ${
+                    standing.status === "qualified"
+                      ? "qualified"
+                      : standing.status === "thirdQualified"
+                        ? "third"
+                        : ""
+                  }`}
+                >
                   {index + 1}
                 </span>
                 <span className="standing-team">{standing.team.name}</span>
                 <span className="standing-points">{standing.expectedPoints} pts</span>
+                <span className="standing-gd">
+                  {standing.goalDifference >= 0 ? "+" : ""}
+                  {standing.goalDifference}
+                </span>
                 <span className="standing-score">{weightedScore(standing.team, weights).toFixed(1)}</span>
               </div>
             ))}
@@ -665,7 +681,7 @@ function ArchitectureSection() {
     {
       icon: DatabaseZap,
       title: "Data Collector",
-      text: "整理球队分组、公开排名、近期状态、阵容深度、攻防指标与旅行适应度，形成可替换数据表。",
+      text: "整理官方分组、真实小组积分、32 强赛果、公开排名、阵容状态和旅行适应度，形成可替换数据表。",
     },
     {
       icon: Brain,
@@ -675,12 +691,12 @@ function ArchitectureSection() {
     {
       icon: BarChart3,
       title: "Visual Layer",
-      text: "展示冠军概率、小组积分、淘汰赛树、决赛推理和参数实验，评审可直接交互验证。",
+      text: "展示冠军概率、真实小组积分、淘汰赛树、决赛推理和参数实验，用户可直接交互验证。",
     },
     {
       icon: Cloud,
       title: "Deploy Surface",
-      text: "静态构建可部署到阿里云 OSS/ESA/函数计算静态托管，也可先用 GitHub Pages 提供公开访问。",
+      text: "静态构建面向公开访问，可迁移到阿里云 OSS、ESA 或函数计算静态托管。",
     },
   ];
 
@@ -689,7 +705,7 @@ function ArchitectureSection() {
       <div className="section-heading wide">
         <span className="section-kicker">System Design</span>
         <h2>Agent 系统架构</h2>
-        <p>作品以可解释性和可演示性为核心：数据采集、预测引擎、可视化输出、部署链路都可在论坛材料中展开。</p>
+        <p>系统由数据快照、评分模型、赛程推演和解释输出组成，页面中可以直接看到每一层如何影响冠军预测。</p>
       </div>
       <div className="architecture-grid">
         {items.map((item, index) => (
@@ -713,7 +729,7 @@ function ArchitectureSection() {
         <ChevronRight size={18} />
         <span>可视化页面</span>
         <ChevronRight size={18} />
-        <span>论坛提交</span>
+        <span>公开访问</span>
       </div>
     </section>
   );
