@@ -2,7 +2,7 @@
 
 ## 作品公开地址
 
-待部署后填写：`https://chengyuann.github.io/qoder-world-cup-agent/`
+https://chengyuann.github.io/qoder-world-cup-agent/
 
 ## 作品简介
 
@@ -62,6 +62,8 @@ pnpm exec vite build
 ```
 
 构建产物可部署为静态页面。
+
+公开页面已通过 HTTP 200 与 Playwright 页面标题验证。
 
 ## 后续规划
 

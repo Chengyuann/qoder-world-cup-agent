@@ -24,3 +24,7 @@ npm run build
 ```
 
 构建产物在 `dist/`。
+
+## 在线访问
+
+https://chengyuann.github.io/qoder-world-cup-agent/
