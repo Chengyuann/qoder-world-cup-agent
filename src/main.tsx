@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
 import {
   Activity,
@@ -65,6 +65,7 @@ function App() {
 
   return (
     <main className="app-shell">
+      <AmbientCanvas />
       <Hero forecast={forecast} final={final} />
       <section className="control-band">
         <div className="control-copy">
@@ -86,9 +87,99 @@ function App() {
   );
 }
 
+function AmbientCanvas() {
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const context = canvas.getContext("2d");
+    if (!context || prefersReducedMotion) return;
+
+    const points = Array.from({ length: 56 }, (_, index) => ({
+      x: (index * 173) % window.innerWidth,
+      y: (index * 97) % window.innerHeight,
+      r: 0.7 + (index % 5) * 0.34,
+      speed: 0.18 + (index % 7) * 0.018,
+      phase: index * 0.47,
+    }));
+
+    let frame = 0;
+    let animation = 0;
+
+    const resize = () => {
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      canvas.width = Math.floor(window.innerWidth * dpr);
+      canvas.height = Math.floor(window.innerHeight * dpr);
+      canvas.style.width = `${window.innerWidth}px`;
+      canvas.style.height = `${window.innerHeight}px`;
+      context.setTransform(dpr, 0, 0, dpr, 0, 0);
+    };
+
+    const draw = () => {
+      frame += 0.008;
+      context.clearRect(0, 0, window.innerWidth, window.innerHeight);
+
+      const gradient = context.createLinearGradient(0, 0, window.innerWidth, window.innerHeight);
+      gradient.addColorStop(0, "rgba(127, 176, 105, 0.11)");
+      gradient.addColorStop(0.52, "rgba(208, 180, 111, 0.055)");
+      gradient.addColorStop(1, "rgba(122, 160, 168, 0.08)");
+      context.strokeStyle = gradient;
+      context.lineWidth = 1;
+
+      for (let i = 0; i < points.length; i += 1) {
+        const point = points[i];
+        point.y -= point.speed;
+        point.x += Math.sin(frame + point.phase) * 0.16;
+        if (point.y < -12) {
+          point.y = window.innerHeight + 12;
+          point.x = (point.x + 241) % window.innerWidth;
+        }
+
+        context.beginPath();
+        context.arc(point.x, point.y, point.r, 0, Math.PI * 2);
+        context.fillStyle = i % 4 === 0 ? "rgba(208, 180, 111, 0.42)" : "rgba(127, 176, 105, 0.34)";
+        context.fill();
+
+        const next = points[(i + 9) % points.length];
+        const distance = Math.hypot(point.x - next.x, point.y - next.y);
+        if (distance < 185) {
+          context.globalAlpha = Math.max(0, 1 - distance / 185) * 0.26;
+          context.beginPath();
+          context.moveTo(point.x, point.y);
+          context.lineTo(next.x, next.y);
+          context.stroke();
+          context.globalAlpha = 1;
+        }
+      }
+
+      animation = requestAnimationFrame(draw);
+    };
+
+    resize();
+    draw();
+    window.addEventListener("resize", resize);
+    return () => {
+      cancelAnimationFrame(animation);
+      window.removeEventListener("resize", resize);
+    };
+  }, []);
+
+  return <canvas ref={canvasRef} className="ambient-canvas" aria-hidden="true" />;
+}
+
 function Hero({ forecast, final }: { forecast: Forecast; final?: MatchPrediction }) {
   const champion = forecast.champion;
   const topThree = forecast.probabilities.slice(0, 3);
+  const heroSignals = [
+    `${topThree[0].team.name} ${(topThree[0].probability * 100).toFixed(1)}%`,
+    `${topThree[1].team.name} ${(topThree[1].probability * 100).toFixed(1)}%`,
+    `${topThree[2].team.name} ${(topThree[2].probability * 100).toFixed(1)}%`,
+    final ? `决赛 ${final.home.name} ${final.homeGoals}-${final.awayGoals} ${final.away.name}` : "决赛路径生成中",
+    `淘汰赛样本 ${forecast.knockout.length} 场`,
+  ];
 
   return (
     <section className="hero-section">
@@ -117,10 +208,12 @@ function Hero({ forecast, final }: { forecast: Forecast; final?: MatchPrediction
             <span>赛题：冠军预测 Agent</span>
             <span>输出：公开页面 + 论坛帖</span>
           </div>
+          <SignalTicker items={heroSignals} />
         </div>
 
         <div className="hero-visual">
           <div className="champion-card">
+            <ChampionRadar champion={champion} />
             <div className="card-topline">
               <span>Predicted Champion</span>
               <Sparkles size={18} />
@@ -137,7 +230,11 @@ function Hero({ forecast, final }: { forecast: Forecast; final?: MatchPrediction
 
           <div className="top-three">
             {topThree.map((item, index) => (
-              <div className="rank-row" key={item.team.code}>
+              <div
+                className="rank-row"
+                key={item.team.code}
+                style={{ "--row-delay": `${index * 120}ms` } as React.CSSProperties}
+              >
                 <span className="rank-index">{index + 1}</span>
                 <span className="rank-team">{item.team.name}</span>
                 <span className="rank-bar">
@@ -150,6 +247,46 @@ function Hero({ forecast, final }: { forecast: Forecast; final?: MatchPrediction
         </div>
       </div>
     </section>
+  );
+}
+
+function SignalTicker({ items }: { items: string[] }) {
+  const track = [...items, ...items];
+  return (
+    <div className="signal-ticker" aria-label="模型实时信号">
+      <div className="signal-track">
+        {track.map((item, index) => (
+          <span key={`${item}-${index}`}>{item}</span>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function ChampionRadar({ champion }: { champion: Team }) {
+  const metrics = [
+    champion.strength,
+    champion.form,
+    champion.depth,
+    champion.knockout,
+    champion.travel,
+  ];
+  const center = 60;
+  const points = metrics
+    .map((metric, index) => {
+      const angle = -Math.PI / 2 + (index / metrics.length) * Math.PI * 2;
+      const radius = 18 + (metric / 100) * 34;
+      return `${center + Math.cos(angle) * radius},${center + Math.sin(angle) * radius}`;
+    })
+    .join(" ");
+
+  return (
+    <svg className="champion-radar" viewBox="0 0 120 120" aria-hidden="true">
+      <circle className="radar-ring ring-one" cx="60" cy="60" r="48" />
+      <circle className="radar-ring ring-two" cx="60" cy="60" r="34" />
+      <polygon className="radar-shape" points={points} />
+      <circle className="radar-core" cx="60" cy="60" r="4" />
+    </svg>
   );
 }
 
@@ -181,6 +318,11 @@ function WeightPanel({
         <button onClick={onReset} type="button" className="icon-button" aria-label="重置权重">
           <RefreshCw size={17} />
         </button>
+      </div>
+      <div className="weight-status">
+        <span className="status-dot" />
+        <span>实时重算</span>
+        <strong>{Object.values(weights).reduce((sum, value) => sum + value, 0)}</strong>
       </div>
       {(Object.keys(weights) as WeightKey[]).map((key) => (
         <label className="weight-row" key={key}>
@@ -214,14 +356,25 @@ function ProbabilityBoard({ forecast }: { forecast: Forecast }) {
       </div>
       <div className="probability-grid">
         {contenders.map((item, index) => (
-          <article className="probability-card" key={item.team.code}>
+          <article
+            className="probability-card"
+            key={item.team.code}
+            style={{ "--card-delay": `${index * 70}ms` } as React.CSSProperties}
+          >
             <div className="probability-card-head">
               <span>{String(index + 1).padStart(2, "0")}</span>
               <strong>{item.team.code}</strong>
             </div>
             <h3>{item.team.name}</h3>
             <div className="probability-line">
-              <span style={{ width: `${Math.max(10, item.probability * 260)}%` }} />
+              <span
+                style={
+                  {
+                    "--target-width": `${Math.max(10, item.probability * 260)}%`,
+                    width: `${Math.max(10, item.probability * 260)}%`,
+                  } as React.CSSProperties
+                }
+              />
             </div>
             <div className="probability-meta">
               <span>{(item.probability * 100).toFixed(1)}%</span>
@@ -288,8 +441,12 @@ function MatchCard({
   featured?: boolean;
 }) {
   const homeWinner = match.winner.code === match.home.code;
+  const confidence = ((homeWinner ? match.homeWin : match.awayWin) * 100).toFixed(0);
   return (
-    <article className={`match-card ${compact ? "compact" : ""} ${featured ? "featured" : ""}`}>
+    <article
+      className={`match-card ${compact ? "compact" : ""} ${featured ? "featured" : ""}`}
+      style={{ "--confidence": `${confidence}%` } as React.CSSProperties}
+    >
       <div className="match-slot">{match.slot}</div>
       <div className={`team-line ${homeWinner ? "winner" : ""}`}>
         <span>{match.home.name}</span>
@@ -301,10 +458,7 @@ function MatchCard({
       </div>
       <div className="match-confidence">
         <span>{match.winner.name} 胜率</span>
-        <strong>
-          {((homeWinner ? match.homeWin : match.awayWin) * 100).toFixed(0)}
-          %
-        </strong>
+        <strong>{confidence}%</strong>
       </div>
       {featured && (
         <ul className="match-reasons">
@@ -378,8 +532,12 @@ function ArchitectureSection() {
         <p>作品以可解释性和可演示性为核心：数据采集、预测引擎、可视化输出、部署链路都可在论坛材料中展开。</p>
       </div>
       <div className="architecture-grid">
-        {items.map((item) => (
-          <article className="architecture-card" key={item.title}>
+        {items.map((item, index) => (
+          <article
+            className="architecture-card"
+            key={item.title}
+            style={{ "--card-delay": `${index * 100}ms` } as React.CSSProperties}
+          >
             <item.icon size={24} />
             <h3>{item.title}</h3>
             <p>{item.text}</p>
