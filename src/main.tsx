@@ -13,6 +13,9 @@ import {
 import { dataSnapshot, defaultWeights } from "./data";
 import { buildForecast, normalizeWeights, weightedScore } from "./forecast";
 import type { Forecast, MatchPrediction, Team, WeightKey, Weights } from "./types";
+import heroImage from "./assets/generated/worldscope-hero.webp";
+import knockoutOrbImage from "./assets/generated/knockout-orb.webp";
+import pitchTextureImage from "./assets/generated/pitch-texture.webp";
 import "./styles.css";
 
 const weightMeta: Record<WeightKey, { label: string; short: string; description: string }> = {
@@ -208,6 +211,11 @@ function Hero({ forecast, final }: { forecast: Forecast; final?: MatchPrediction
 
         <div className="hero-visual">
           <div className="champion-card">
+            <img
+              className="champion-backdrop"
+              src={heroImage}
+              alt="夜色足球场与数据粒子构成的冠军预测视觉"
+            />
             <ChampionRadar champion={champion} />
             <div className="card-topline">
               <span>Predicted Champion</span>
@@ -415,6 +423,13 @@ function DataIntelligenceSection() {
           {dataSnapshot.note} 数据层保留来源边界，页面只呈现可复核的赛程状态、预测结果和推理依据。
         </p>
       </div>
+      <div className="data-visual-strip">
+        <img src={pitchTextureImage} alt="球场纹理、足球皮革与数据网格的抽象背景" loading="lazy" />
+        <div>
+          <span>Structured Snapshot</span>
+          <strong>48 teams / 12 groups / live knockout state</strong>
+        </div>
+      </div>
       <div className="data-grid">
         {sources.map((source, index) => (
           <article
@@ -564,10 +579,15 @@ function BracketSection({
 
   return (
     <section className="bracket-section" id="bracket">
-      <div className="section-heading wide">
-        <span className="section-kicker">Knockout Path</span>
-        <h2>淘汰赛逐层推演</h2>
-        <p>32 强已结束场次使用真实赛果，未结束比赛与后续轮次由双方综合评分、攻防错位和杯赛修正生成预测。</p>
+      <div className="bracket-intro">
+        <div className="section-heading wide">
+          <span className="section-kicker">Knockout Path</span>
+          <h2>淘汰赛逐层推演</h2>
+          <p>32 强已结束场次使用真实赛果，未结束比赛与后续轮次由双方综合评分、攻防错位和杯赛修正生成预测。</p>
+        </div>
+        <figure className="bracket-art">
+          <img src={knockoutOrbImage} alt="金色足球奖杯剪影与透明赛程球体" loading="lazy" />
+        </figure>
       </div>
 
       <div className="final-strip">
