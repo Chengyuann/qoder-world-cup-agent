@@ -7,7 +7,8 @@
     "dev": "vite --host 127.0.0.1",
     "build": "vite build",
     "preview": "vite preview --host 127.0.0.1",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "verify:data": "node scripts/verify-openfootball-r32.mjs"
   },
   "dependencies": {
     "@vitejs/plugin-react": "^4.3.4",

@@ -67,8 +67,8 @@ function App() {
           <span className="section-kicker">Model Control</span>
           <h2>冠军预测不是黑箱，所有权重都能现场调节。</h2>
           <p>
-            Agent 使用已核对的 2026 世界杯小组与淘汰赛快照，锁定真实赛果，
-            再把未完赛路径交给权重模型继续推演。
+            Agent 使用 openfootball/worldcup 的 2026 世界杯小组与淘汰赛快照，锁定小组赛和 32 强真实赛果，
+            再把 16 强及后续路径交给权重模型继续推演。
           </p>
         </div>
         <WeightPanel weights={weights} onUpdate={updateWeight} onReset={resetWeights} />
@@ -171,13 +171,14 @@ function Hero({ forecast, final }: { forecast: Forecast; final?: MatchPrediction
   const champion = forecast.champion;
   const topThree = forecast.probabilities.slice(0, 3);
   const r32Matches = forecast.knockout.filter((match) => match.round === "R32");
+  const futureMatches = forecast.knockout.filter((match) => match.round !== "R32" && match.status === "forecast");
   const heroSignals = [
     `${topThree[0].team.name} ${(topThree[0].probability * 100).toFixed(1)}%`,
     `${topThree[1].team.name} ${(topThree[1].probability * 100).toFixed(1)}%`,
     `${topThree[2].team.name} ${(topThree[2].probability * 100).toFixed(1)}%`,
     final ? `预测决赛 ${final.home.name} ${final.homeGoals}-${final.awayGoals} ${final.away.name}` : "决赛路径生成中",
     `真实 32 强赛果 ${r32Matches.filter((match) => match.status === "actual").length} 场`,
-    `未完赛 32 强预测 ${r32Matches.filter((match) => match.status === "forecast").length} 场`,
+    `16 强以后模型预测 ${futureMatches.length} 场`,
   ];
 
   return (
@@ -448,22 +449,22 @@ function DataIntelligenceSection() {
     {
       label: "官方分组",
       value: "12 组 48 队",
-      detail: "按 FIFA / Olympics 公开页面核对，移除了不在正赛中的旧占位球队。",
+      detail: "按 openfootball/worldcup 的 2026--usa/cup.txt 核对分组，保留 Football.TXT 原始赛事结构。",
     },
     {
       label: "小组积分",
       value: "最终排名与 GD",
-      detail: "采用 NBC Sports 公开最终小组表，页面展示真实晋级状态。",
+      detail: "由 openfootball 小组赛比分汇总为积分、进球、失球和净胜球，页面展示真实晋级状态。",
     },
     {
       label: "淘汰赛赛果",
-      value: "32 强已完赛锁定",
-      detail: "已结束场次不再模拟，后续轮次只从真实晋级球队继续推演。",
+      value: "32 强 16 场锁定",
+      detail: "按 2026--usa/cup_finals.txt 锁定 Match 73-88，16 强以后只从真实晋级球队继续推演。",
     },
     {
       label: "模型特征",
       value: "实力 / 状态 / 深度",
-      detail: "未完赛比赛继续使用权重模型输出胜率、比分和解释语句。",
+      detail: "16 强及后续比赛继续使用权重模型输出胜率、比分和解释语句。",
     },
   ];
 
@@ -636,7 +637,7 @@ function BracketSection({
         <div className="section-heading wide">
           <span className="section-kicker">Knockout Path</span>
           <h2>淘汰赛逐层推演</h2>
-          <p>32 强已结束场次使用真实赛果，未结束比赛与后续轮次由双方综合评分、攻防错位和杯赛修正生成预测。</p>
+          <p>32 强 16 场全部按 openfootball 真实赛果锁定，16 强及后续轮次由双方综合评分、攻防错位和杯赛修正生成预测。</p>
         </div>
         <figure className="bracket-art">
           <img src={knockoutOrbImage} alt="金色足球奖杯剪影与透明赛程球体" loading="lazy" />
@@ -714,7 +715,7 @@ function GroupSection({ forecast, weights }: { forecast: Forecast; weights: Weig
       <div className="section-heading">
         <span className="section-kicker">Group Snapshot</span>
         <h2>小组赛真实积分与晋级状态</h2>
-        <p>表格按 2026-07-03 公开最终小组表展示：前两名直接晋级，第三名仅在公开资料标记为晋级时进入 32 强。</p>
+        <p>表格按 openfootball/worldcup 2026--usa 小组赛比分汇总：前两名直接晋级，第三名仅在公开资料标记为晋级时进入 32 强。</p>
       </div>
       <div className="groups-grid">
         {forecast.groups.map((group) => (
