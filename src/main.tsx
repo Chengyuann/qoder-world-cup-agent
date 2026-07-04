@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { dataSnapshot, defaultWeights } from "./data";
 import { buildForecast, normalizeWeights, weightedScore } from "./forecast";
+import { flagUrl, visualForTeam } from "./teamVisuals";
 import type { Forecast, MatchPrediction, Team, WeightKey, Weights } from "./types";
 import heroImage from "./assets/generated/worldscope-hero.webp";
 import knockoutOrbImage from "./assets/generated/knockout-orb.webp";
@@ -221,8 +222,16 @@ function Hero({ forecast, final }: { forecast: Forecast; final?: MatchPrediction
               <span>Predicted Champion</span>
               <Sparkles size={18} />
             </div>
-            <div className="champion-code">{champion.code}</div>
-            <h2>{champion.name}</h2>
+            <div className="champion-identity">
+              <TeamCrest team={champion} size="large" />
+              <div>
+                <div className="champion-code">{champion.code}</div>
+                <h2>
+                  <TeamFlag team={champion} />
+                  {champion.name}
+                </h2>
+              </div>
+            </div>
             <div className="champion-metrics">
               <Metric label="夺冠概率" value={`${(topThree[0].probability * 100).toFixed(1)}%`} />
               <Metric label="模型评分" value={topThree[0].score.toFixed(1)} />
@@ -239,7 +248,7 @@ function Hero({ forecast, final }: { forecast: Forecast; final?: MatchPrediction
                 style={{ "--row-delay": `${index * 120}ms` } as React.CSSProperties}
               >
                 <span className="rank-index">{index + 1}</span>
-                <span className="rank-team">{item.team.name}</span>
+                <TeamMark team={item.team} variant="inline" />
                 <span className="rank-bar">
                   <span style={{ width: `${Math.max(8, item.probability * 240)}%` }} />
                 </span>
@@ -263,6 +272,47 @@ function SignalTicker({ items }: { items: string[] }) {
         ))}
       </div>
     </div>
+  );
+}
+
+function TeamFlag({ team }: { team: Team }) {
+  return <img className="team-flag" src={flagUrl(team)} alt={`${team.name}国旗`} loading="lazy" />;
+}
+
+function TeamCrest({ team, size = "normal" }: { team: Team; size?: "small" | "normal" | "large" }) {
+  const visual = visualForTeam(team);
+  return (
+    <span
+      className={`team-crest ${size}`}
+      style={
+        {
+          "--crest-primary": visual.primary,
+          "--crest-secondary": visual.secondary,
+          "--crest-accent": visual.accent,
+        } as React.CSSProperties
+      }
+      aria-label={`${team.name}原创队徽`}
+      title={`${team.name}原创队徽`}
+    >
+      <span>{team.code}</span>
+    </span>
+  );
+}
+
+function TeamMark({
+  team,
+  variant = "default",
+}: {
+  team: Team;
+  variant?: "default" | "inline" | "compact";
+}) {
+  return (
+    <span className={`team-mark ${variant}`}>
+      <TeamCrest team={team} size={variant === "compact" ? "small" : "normal"} />
+      <TeamFlag team={team} />
+      <span className="team-mark-name">{team.name}</span>
+      {variant === "default" && <span className="team-mark-code">{team.code}</span>}
+    </span>
   );
 }
 
@@ -366,9 +416,12 @@ function ProbabilityBoard({ forecast }: { forecast: Forecast }) {
           >
             <div className="probability-card-head">
               <span>{String(index + 1).padStart(2, "0")}</span>
-              <strong>{item.team.code}</strong>
+              <TeamCrest team={item.team} size="small" />
             </div>
-            <h3>{item.team.name}</h3>
+            <h3>
+              <TeamFlag team={item.team} />
+              {item.team.name}
+            </h3>
             <div className="probability-line">
               <span
                 style={
@@ -633,11 +686,11 @@ function MatchCard({
         {match.scoreNote && match.scoreNote !== "真实赛果" ? ` · ${match.scoreNote}` : ""}
       </div>
       <div className={`team-line ${homeWinner ? "winner" : ""}`}>
-        <span>{match.home.name}</span>
+        <TeamMark team={match.home} variant="compact" />
         <strong>{match.homeGoals}</strong>
       </div>
       <div className={`team-line ${!homeWinner ? "winner" : ""}`}>
-        <span>{match.away.name}</span>
+        <TeamMark team={match.away} variant="compact" />
         <strong>{match.awayGoals}</strong>
       </div>
       <div className="match-confidence">
@@ -680,7 +733,7 @@ function GroupSection({ forecast, weights }: { forecast: Forecast; weights: Weig
                 >
                   {index + 1}
                 </span>
-                <span className="standing-team">{standing.team.name}</span>
+                <TeamMark team={standing.team} variant="compact" />
                 <span className="standing-points">{standing.expectedPoints} pts</span>
                 <span className="standing-gd">
                   {standing.goalDifference >= 0 ? "+" : ""}
