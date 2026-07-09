@@ -1,12 +1,13 @@
 :root {
   color-scheme: dark;
   font-family:
-    "Aptos",
-    "Geist",
-    "SF Pro Display",
-    -apple-system,
-    BlinkMacSystemFont,
-    "Segoe UI",
+    "PingFang SC",
+    "Microsoft YaHei",
+    "Noto Sans CJK SC",
+    "Source Han Sans SC",
+    "Hiragino Sans GB",
+    "Heiti SC",
+    "WenQuanYi Micro Hei",
     sans-serif;
   background: #11130f;
   color: #f4f1e8;
@@ -188,7 +189,7 @@ a {
 
 .hero-section {
   min-height: 94dvh;
-  padding: 118px 0 46px;
+  padding: 112px 0 56px;
   display: flex;
   align-items: center;
 }
@@ -196,13 +197,13 @@ a {
 .hero-grid {
   width: 100%;
   display: grid;
-  grid-template-columns: minmax(0, 1.12fr) minmax(380px, 0.88fr);
-  gap: 56px;
+  grid-template-columns: minmax(0, 1.06fr) minmax(360px, 0.94fr);
+  gap: 44px;
   align-items: center;
 }
 
 .hero-copy {
-  max-width: 790px;
+  max-width: 820px;
 }
 
 .eyebrow,
@@ -225,11 +226,11 @@ p {
 }
 
 .hero-copy h1 {
-  margin-top: 24px;
-  font-size: clamp(3.1rem, 7vw, 7.6rem);
-  line-height: 0.92;
+  margin-top: 22px;
+  font-size: clamp(2.25rem, 4.45vw, 4.65rem);
+  line-height: 1.2;
   letter-spacing: 0;
-  max-width: 860px;
+  max-width: 900px;
 }
 
 .kinetic-title {
@@ -245,11 +246,11 @@ p {
 }
 
 .hero-lede {
-  margin-top: 30px;
+  margin-top: 24px;
   color: #c9ccbd;
-  font-size: clamp(1.03rem, 1.5vw, 1.26rem);
+  font-size: clamp(0.98rem, 1.24vw, 1.14rem);
   line-height: 1.72;
-  max-width: 750px;
+  max-width: 780px;
 }
 
 .hero-lede strong {
@@ -260,7 +261,7 @@ p {
   display: flex;
   flex-wrap: wrap;
   gap: 14px;
-  margin-top: 34px;
+  margin-top: 28px;
 }
 
 .primary-action,
@@ -328,7 +329,7 @@ p {
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
-  margin-top: 40px;
+  margin-top: 30px;
   color: #aeb3a6;
   font-size: 0.86rem;
 }
@@ -343,11 +344,11 @@ p {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 10px;
-  margin-top: 28px;
+  margin-top: 22px;
 }
 
 .motion-tile {
-  min-height: 126px;
+  min-height: 108px;
   padding: 16px;
   border: 1px solid rgba(244, 241, 232, 0.12);
   background:
@@ -370,9 +371,9 @@ p {
 
 .motion-tile strong {
   display: block;
-  margin-top: 18px;
+  margin-top: 14px;
   color: var(--text);
-  font-size: clamp(1.15rem, 1.8vw, 2rem);
+  font-size: clamp(1rem, 1.35vw, 1.45rem);
   line-height: 1;
 }
 
@@ -432,8 +433,8 @@ p {
 }
 
 .champion-card {
-  min-height: 540px;
-  padding: 34px;
+  min-height: 500px;
+  padding: 30px;
   position: relative;
   overflow: hidden;
 }
@@ -495,8 +496,8 @@ p {
 
 .champion-code {
   margin-top: 64px;
-  font-size: clamp(4rem, 8vw, 8.5rem);
-  line-height: 0.82;
+  font-size: clamp(3rem, 5.6vw, 5.9rem);
+  line-height: 0.88;
   font-weight: 900;
   color: rgba(244, 241, 232, 0.12);
   letter-spacing: 0;
@@ -506,7 +507,7 @@ p {
   display: flex;
   align-items: flex-end;
   gap: 18px;
-  margin-top: 58px;
+  margin-top: 52px;
 }
 
 .champion-identity .champion-code {
@@ -518,14 +519,14 @@ p {
   display: flex;
   gap: 12px;
   align-items: center;
-  font-size: clamp(2rem, 4vw, 4.4rem);
-  line-height: 1;
+  font-size: clamp(1.6rem, 2.8vw, 3rem);
+  line-height: 1.2;
 }
 
 .champion-card p {
-  margin-top: 28px;
+  margin-top: 24px;
   color: #ccd0c2;
-  line-height: 1.72;
+  line-height: 1.66;
   max-width: 460px;
 }
 
@@ -533,7 +534,7 @@ p {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 12px;
-  margin-top: 28px;
+  margin-top: 24px;
 }
 
 .metric {
@@ -614,8 +615,8 @@ p {
 }
 
 .team-crest.large {
-  width: 74px;
-  height: 86px;
+  width: 64px;
+  height: 74px;
 }
 
 .team-crest.large span {
@@ -708,8 +709,8 @@ p {
 .control-copy h2,
 .section-heading h2 {
   margin-top: 12px;
-  font-size: clamp(2.2rem, 4vw, 4.2rem);
-  line-height: 1.02;
+  font-size: clamp(1.72rem, 3vw, 3.15rem);
+  line-height: 1.2;
   letter-spacing: 0;
 }
 
@@ -717,7 +718,7 @@ p {
 .section-heading p {
   margin-top: 18px;
   color: #bfc3b5;
-  line-height: 1.75;
+  line-height: 1.68;
   max-width: 720px;
 }
 
@@ -731,7 +732,7 @@ p {
 
 .panel-heading h3 {
   margin-top: 8px;
-  font-size: 1.45rem;
+  font-size: 1.25rem;
 }
 
 .icon-button {
@@ -867,7 +868,7 @@ input[type="range"] {
 .data-visual-strip strong {
   margin-top: 10px;
   color: var(--text);
-  font-size: clamp(1.35rem, 2.2vw, 2.5rem);
+  font-size: clamp(1.12rem, 1.7vw, 1.85rem);
   line-height: 1.12;
   overflow-wrap: anywhere;
 }
@@ -902,7 +903,7 @@ input[type="range"] {
   display: block;
   margin-top: 28px;
   color: var(--text);
-  font-size: 1.45rem;
+  font-size: 1.25rem;
   line-height: 1.18;
 }
 
@@ -945,14 +946,14 @@ input[type="range"] {
 
 .reasoning-panel h2 {
   margin-top: 12px;
-  font-size: clamp(2.2rem, 4vw, 4.2rem);
-  line-height: 1.02;
+  font-size: clamp(1.7rem, 2.8vw, 3rem);
+  line-height: 1.2;
 }
 
 .reasoning-panel p {
   margin-top: 18px;
   color: #bfc3b5;
-  line-height: 1.75;
+  line-height: 1.68;
   max-width: 680px;
 }
 
@@ -1051,7 +1052,8 @@ input[type="range"] {
   display: flex;
   gap: 10px;
   align-items: center;
-  font-size: clamp(1.4rem, 2.4vw, 2.7rem);
+  font-size: clamp(1.16rem, 1.85vw, 2.05rem);
+  line-height: 1.12;
 }
 
 .probability-meta {
@@ -1327,7 +1329,7 @@ input[type="range"] {
 
 .architecture-card h3 {
   margin-top: 28px;
-  font-size: 1.45rem;
+  font-size: 1.26rem;
 }
 
 .architecture-card p {
@@ -1479,7 +1481,7 @@ input[type="range"] {
 
   .hero-section {
     min-height: auto;
-    padding-top: 92px;
+    padding-top: 86px;
   }
 
   .motion-dock {
@@ -1501,7 +1503,8 @@ input[type="range"] {
   }
 
   .hero-copy h1 {
-    font-size: clamp(2.7rem, 16vw, 4.5rem);
+    font-size: clamp(1.82rem, 9.4vw, 2.72rem);
+    line-height: 1.18;
   }
 
   .kinetic-title {
@@ -1513,7 +1516,7 @@ input[type="range"] {
   }
 
   .motion-tile {
-    min-height: 112px;
+    min-height: 102px;
     padding: 14px;
   }
 
