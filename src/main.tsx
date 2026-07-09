@@ -60,9 +60,11 @@ function App() {
 
   return (
     <main className="app-shell">
+      <MotionRuntime />
       <AmbientCanvas />
+      <MotionDock />
       <Hero forecast={forecast} final={final} />
-      <section className="control-band">
+      <section className="control-band" id="model" data-reveal>
         <div className="control-copy">
           <span className="section-kicker">Model Control</span>
           <h2>冠军预测不是黑箱，所有权重都能现场调节。</h2>
@@ -81,6 +83,89 @@ function App() {
       <GroupSection forecast={forecast} weights={weights} />
       <ArchitectureSection />
     </main>
+  );
+}
+
+function MotionRuntime() {
+  useEffect(() => {
+    const root = document.documentElement;
+    const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    let ticking = false;
+
+    const updateScroll = () => {
+      const maxScroll = Math.max(1, document.documentElement.scrollHeight - window.innerHeight);
+      root.style.setProperty("--scroll-progress", `${window.scrollY / maxScroll}`);
+      ticking = false;
+    };
+
+    const onScroll = () => {
+      if (!ticking) {
+        ticking = true;
+        requestAnimationFrame(updateScroll);
+      }
+    };
+
+    const onPointerMove = (event: PointerEvent) => {
+      root.style.setProperty("--cursor-x", `${event.clientX}`);
+      root.style.setProperty("--cursor-y", `${event.clientY}`);
+
+      const target = (event.target as Element | null)?.closest<HTMLElement>(".motion-card");
+      if (!target) return;
+      const rect = target.getBoundingClientRect();
+      target.style.setProperty("--spot-x", `${event.clientX - rect.left}px`);
+      target.style.setProperty("--spot-y", `${event.clientY - rect.top}px`);
+    };
+
+    const revealItems = Array.from(document.querySelectorAll<HTMLElement>("[data-reveal]"));
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) entry.target.classList.add("is-visible");
+        });
+      },
+      { rootMargin: "0px 0px -12% 0px", threshold: 0.16 },
+    );
+
+    revealItems.forEach((item) => observer.observe(item));
+    updateScroll();
+
+    if (!prefersReducedMotion) {
+      window.addEventListener("scroll", onScroll, { passive: true });
+      window.addEventListener("pointermove", onPointerMove, { passive: true });
+    } else {
+      revealItems.forEach((item) => item.classList.add("is-visible"));
+    }
+
+    return () => {
+      observer.disconnect();
+      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("pointermove", onPointerMove);
+    };
+  }, []);
+
+  return (
+    <>
+      <div className="scroll-progress" aria-hidden="true" />
+      <div className="cursor-spotlight" aria-hidden="true" />
+    </>
+  );
+}
+
+function MotionDock() {
+  return (
+    <nav className="motion-dock" aria-label="WorldScope sections" data-reveal>
+      <a href="#" className="motion-brand">
+        <span>WorldScope</span>
+        <strong>Live Forecast</strong>
+      </a>
+      <div className="motion-links">
+        <a href="#model">Model</a>
+        <a href="#distribution">Distribution</a>
+        <a href="#bracket">Bracket</a>
+        <a href="#groups">Groups</a>
+      </div>
+      <a href="#bracket" className="motion-cta">Open Path</a>
+    </nav>
   );
 }
 
@@ -184,12 +269,15 @@ function Hero({ forecast, final }: { forecast: Forecast; final?: MatchPrediction
   return (
     <section className="hero-section">
       <div className="hero-grid">
-        <div className="hero-copy">
+        <div className="hero-copy" data-reveal>
           <div className="eyebrow">
             <Trophy size={16} />
             Qoder World Cup Forecast Agent
           </div>
-          <h1>世界杯冠军预测 Agent：从分组到决赛的可解释推演。</h1>
+          <h1>
+            世界杯冠军预测 Agent：
+            <span className="kinetic-title">从分组到决赛的可解释推演。</span>
+          </h1>
           <p className="hero-lede">
             当前模型在真实赛果快照基础上继续预测冠军为 <strong>{champion.name}</strong>。系统以公开分组、
             小组积分、已结束 32 强赛果、阵容结构和淘汰赛经验构建推演链路。
@@ -208,11 +296,12 @@ function Hero({ forecast, final }: { forecast: Forecast; final?: MatchPrediction
             <span>{dataSnapshot.label}</span>
             <span>真实赛果 + 模型续推</span>
           </div>
+          <HeroMotionWall forecast={forecast} final={final} />
           <SignalTicker items={heroSignals} />
         </div>
 
-        <div className="hero-visual">
-          <div className="champion-card">
+        <div className="hero-visual" data-reveal>
+          <div className="champion-card motion-card">
             <img
               className="champion-backdrop"
               src={heroImage}
@@ -260,6 +349,51 @@ function Hero({ forecast, final }: { forecast: Forecast; final?: MatchPrediction
         </div>
       </div>
     </section>
+  );
+}
+
+function HeroMotionWall({ forecast, final }: { forecast: Forecast; final?: MatchPrediction }) {
+  const actualMatches = forecast.knockout.filter((match) => match.status === "actual").length;
+  const forecastMatches = forecast.knockout.filter((match) => match.status === "forecast").length;
+  const topPick = forecast.probabilities[0];
+  const cards = [
+    {
+      label: "Live Data",
+      value: `${actualMatches} locked`,
+      detail: "openfootball verified",
+    },
+    {
+      label: "Signal",
+      value: `${(topPick.probability * 100).toFixed(1)}%`,
+      detail: `${topPick.team.name} champion lane`,
+    },
+    {
+      label: "Final",
+      value: final ? `${final.homeGoals}-${final.awayGoals}` : "building",
+      detail: final ? `${final.home.name} / ${final.away.name}` : "model pending",
+    },
+    {
+      label: "Forecast",
+      value: `${forecastMatches} paths`,
+      detail: "R16 to final",
+    },
+  ];
+
+  return (
+    <div className="motion-wall" aria-label="实时预测动态卡片">
+      {cards.map((card, index) => (
+        <div
+          className="motion-tile motion-card"
+          key={card.label}
+          style={{ "--card-delay": `${index * 80}ms` } as React.CSSProperties}
+          data-reveal
+        >
+          <span>{card.label}</span>
+          <strong>{card.value}</strong>
+          <small>{card.detail}</small>
+        </div>
+      ))}
+    </div>
   );
 }
 
@@ -363,7 +497,7 @@ function WeightPanel({
   onReset: () => void;
 }) {
   return (
-    <div className="weight-panel">
+    <div className="weight-panel motion-card">
       <div className="panel-heading">
         <div>
           <span className="section-kicker">Explainable Weights</span>
@@ -400,10 +534,11 @@ function WeightPanel({
 
 function ProbabilityBoard({ forecast }: { forecast: Forecast }) {
   const contenders = forecast.probabilities.slice(0, 10);
+  const marqueeItems = [...contenders, ...contenders];
 
   return (
-    <section className="probability-section">
-      <div className="section-heading">
+    <section className="probability-section" id="distribution" data-reveal>
+      <div className="section-heading" data-reveal>
         <span className="section-kicker">Champion Distribution</span>
         <h2>冠军候选分布</h2>
         <p>softmax 概率用于排序，不声称等同真实博彩概率；它更适合作为 Agent 的可解释相对信心。</p>
@@ -411,9 +546,10 @@ function ProbabilityBoard({ forecast }: { forecast: Forecast }) {
       <div className="probability-grid">
         {contenders.map((item, index) => (
           <article
-            className="probability-card"
+            className="probability-card motion-card"
             key={item.team.code}
             style={{ "--card-delay": `${index * 70}ms` } as React.CSSProperties}
+            data-reveal
           >
             <div className="probability-card-head">
               <span>{String(index + 1).padStart(2, "0")}</span>
@@ -439,6 +575,18 @@ function ProbabilityBoard({ forecast }: { forecast: Forecast }) {
             </div>
           </article>
         ))}
+      </div>
+      <div className="contender-marquee" aria-label="冠军候选动态展台">
+        <div className="contender-track">
+          {marqueeItems.map((item, index) => (
+            <span className="contender-chip" key={`${item.team.code}-${index}`}>
+              <TeamCrest team={item.team} size="small" />
+              <TeamFlag team={item.team} />
+              <strong>{item.team.name}</strong>
+              <em>{(item.probability * 100).toFixed(1)}%</em>
+            </span>
+          ))}
+        </div>
       </div>
     </section>
   );
@@ -469,15 +617,15 @@ function DataIntelligenceSection() {
   ];
 
   return (
-    <section className="data-section">
-      <div className="section-heading wide">
+    <section className="data-section" data-reveal>
+      <div className="section-heading wide" data-reveal>
         <span className="section-kicker">Data Acquisition</span>
         <h2>数据采集与特征工程</h2>
         <p>
           {dataSnapshot.note} 数据层保留来源边界，页面只呈现可复核的赛程状态、预测结果和推理依据。
         </p>
       </div>
-      <div className="data-visual-strip">
+      <div className="data-visual-strip motion-card" data-reveal>
         <img src={pitchTextureImage} alt="球场纹理、足球皮革与数据网格的抽象背景" loading="lazy" />
         <div>
           <span>Structured Snapshot</span>
@@ -487,9 +635,10 @@ function DataIntelligenceSection() {
       <div className="data-grid">
         {sources.map((source, index) => (
           <article
-            className="data-card"
+            className="data-card motion-card"
             key={source.label}
             style={{ "--card-delay": `${index * 90}ms` } as React.CSSProperties}
+            data-reveal
           >
             <span>{source.label}</span>
             <strong>{source.value}</strong>
@@ -497,7 +646,7 @@ function DataIntelligenceSection() {
           </article>
         ))}
       </div>
-      <div className="feature-flow">
+      <div className="feature-flow" data-reveal>
         <span>raw data</span>
         <ChevronRight size={17} />
         <span>feature score</span>
@@ -520,8 +669,8 @@ function ReasoningSection({ forecast }: { forecast: Forecast }) {
     .map((match) => `${match.round}: ${match.home.name} ${match.homeGoals}-${match.awayGoals} ${match.away.name}`);
 
   return (
-    <section className="reasoning-section">
-      <div className="reasoning-panel">
+    <section className="reasoning-section" data-reveal>
+      <div className="reasoning-panel motion-card">
         <div>
           <span className="section-kicker">Reasoning Chain</span>
           <h2>{forecast.champion.name} 为什么是当前冠军预测？</h2>
@@ -533,14 +682,14 @@ function ReasoningSection({ forecast }: { forecast: Forecast }) {
         </div>
         <div className="reasoning-stack">
           {final?.explanation.map((line, index) => (
-            <div className="reasoning-step" key={line}>
+            <div className="reasoning-step motion-card" key={line} data-reveal>
               <span>{String(index + 1).padStart(2, "0")}</span>
               <p>{line}</p>
             </div>
           ))}
         </div>
       </div>
-      <div className="route-strip">
+      <div className="route-strip motion-card" data-reveal>
         {route.slice(-5).map((item, index) => (
           <span key={item} style={{ "--card-delay": `${index * 90}ms` } as React.CSSProperties}>
             {item}
@@ -582,8 +731,8 @@ function ScenarioSection({
   ];
 
   return (
-    <section className="scenario-section">
-      <div className="section-heading wide">
+    <section className="scenario-section" data-reveal>
+      <div className="section-heading wide" data-reveal>
         <span className="section-kicker">What-if Lab</span>
         <h2>情景实验：评审可现场切换模型假设</h2>
         <p>
@@ -595,11 +744,12 @@ function ScenarioSection({
           const active = (Object.keys(weights) as WeightKey[]).every((key) => weights[key] === scenario.weights[key]);
           return (
             <button
-              className={`scenario-card ${active ? "active" : ""}`}
+              className={`scenario-card motion-card ${active ? "active" : ""}`}
               key={scenario.title}
               onClick={() => onApply(scenario.weights)}
               style={{ "--card-delay": `${index * 80}ms` } as React.CSSProperties}
               type="button"
+              data-reveal
             >
               <span>{scenario.title}</span>
               <p>{scenario.text}</p>
@@ -632,14 +782,14 @@ function BracketSection({
   ] as const;
 
   return (
-    <section className="bracket-section" id="bracket">
+    <section className="bracket-section" id="bracket" data-reveal>
       <div className="bracket-intro">
-        <div className="section-heading wide">
+        <div className="section-heading wide" data-reveal>
           <span className="section-kicker">Knockout Path</span>
           <h2>淘汰赛逐层推演</h2>
           <p>32 强 16 场全部按 openfootball 真实赛果锁定，16 强及后续轮次由双方综合评分、攻防错位和杯赛修正生成预测。</p>
         </div>
-        <figure className="bracket-art">
+        <figure className="bracket-art motion-card" data-reveal>
           <img src={knockoutOrbImage} alt="金色足球奖杯剪影与透明赛程球体" loading="lazy" />
         </figure>
       </div>
@@ -653,7 +803,7 @@ function BracketSection({
 
       <div className="rounds-grid">
         {rounds.map((round) => (
-          <div className="round-column" key={round.key}>
+          <div className="round-column motion-card" key={round.key} data-reveal>
             <div className="round-title">{round.label}</div>
             {round.matches.map((match) => (
               <MatchCard match={match} key={match.id} />
@@ -678,8 +828,9 @@ function MatchCard({
   const confidence = ((homeWinner ? match.homeWin : match.awayWin) * 100).toFixed(0);
   return (
     <article
-      className={`match-card ${compact ? "compact" : ""} ${featured ? "featured" : ""}`}
+      className={`match-card motion-card ${compact ? "compact" : ""} ${featured ? "featured" : ""}`}
       style={{ "--confidence": `${confidence}%` } as React.CSSProperties}
+      data-reveal
     >
       <div className="match-slot">{match.slot}</div>
       <div className={`match-status ${match.status}`}>
@@ -711,15 +862,15 @@ function MatchCard({
 
 function GroupSection({ forecast, weights }: { forecast: Forecast; weights: Weights }) {
   return (
-    <section className="groups-section">
-      <div className="section-heading">
+    <section className="groups-section" id="groups" data-reveal>
+      <div className="section-heading" data-reveal>
         <span className="section-kicker">Group Snapshot</span>
         <h2>小组赛真实积分与晋级状态</h2>
         <p>表格按 openfootball/worldcup 2026--usa 小组赛比分汇总：前两名直接晋级，第三名仅在公开资料标记为晋级时进入 32 强。</p>
       </div>
       <div className="groups-grid">
         {forecast.groups.map((group) => (
-          <article className="group-card" key={group.group}>
+          <article className="group-card motion-card" key={group.group} data-reveal>
             <div className="group-title">Group {group.group}</div>
             {group.standings.map((standing, index) => (
               <div className="standing-row" key={standing.team.code}>
@@ -775,8 +926,8 @@ function ArchitectureSection() {
   ];
 
   return (
-    <section className="architecture-section" id="architecture">
-      <div className="section-heading wide">
+    <section className="architecture-section" id="architecture" data-reveal>
+      <div className="section-heading wide" data-reveal>
         <span className="section-kicker">System Design</span>
         <h2>Agent 系统架构</h2>
         <p>系统由数据快照、评分模型、赛程推演和解释输出组成，页面中可以直接看到每一层如何影响冠军预测。</p>
@@ -784,9 +935,10 @@ function ArchitectureSection() {
       <div className="architecture-grid">
         {items.map((item, index) => (
           <article
-            className="architecture-card"
+            className="architecture-card motion-card"
             key={item.title}
             style={{ "--card-delay": `${index * 100}ms` } as React.CSSProperties}
+            data-reveal
           >
             <item.icon size={24} />
             <h3>{item.title}</h3>
@@ -794,7 +946,7 @@ function ArchitectureSection() {
           </article>
         ))}
       </div>
-      <div className="pipeline">
+      <div className="pipeline" data-reveal>
         <span>公开数据</span>
         <ChevronRight size={18} />
         <span>权重模型</span>
